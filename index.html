@@ -21,8 +21,7 @@
   .metric-delta { font-size: 12px; margin-top: 4px; min-height: 16px; }
   .section-label { font-size: 14px; font-weight: 500; color: #5f5e5a; margin-bottom: 10px; }
   .chart-card { background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-  .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
   .email-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .email-table th { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e8e6e0; color: #5f5e5a; font-weight: 500; white-space: nowrap; }
   .email-table td { padding: 9px 12px; border-bottom: 0.5px solid #f0ede8; }
@@ -35,9 +34,10 @@
   .pill-blue { background: #D6EBFA; color: #1A4E7A; }
   .pill-amber { background: #FEF0D5; color: #7A3D00; }
   .pill-red { background: #FDDCDB; color: #7A1A19; }
+  .dl-note { font-size: 11px; color: #888780; margin-top: 8px; }
   @media (max-width: 700px) {
     .metric-grid { grid-template-columns: repeat(2, 1fr); }
-    .two-col, .three-col { grid-template-columns: 1fr; }
+    .two-col { grid-template-columns: 1fr; }
     body { padding: 1rem; }
   }
 </style>
@@ -54,22 +54,22 @@
 <div class="metric-grid">
   <div class="metric-card">
     <div class="metric-label">Total sent</div>
-    <div class="metric-value" id="m-sent">112,277</div>
+    <div class="metric-value" id="m-sent">—</div>
     <div class="metric-delta" id="d-sent"></div>
   </div>
   <div class="metric-card">
     <div class="metric-label">Overall open rate</div>
-    <div class="metric-value" id="m-open">35.2%</div>
+    <div class="metric-value" id="m-open">—</div>
     <div class="metric-delta" id="d-open"></div>
   </div>
   <div class="metric-card">
     <div class="metric-label">Overall click rate</div>
-    <div class="metric-value" id="m-click">2.2%</div>
+    <div class="metric-value" id="m-click">—</div>
     <div class="metric-delta" id="d-click"></div>
   </div>
   <div class="metric-card">
     <div class="metric-label">Total reports sent</div>
-    <div class="metric-value" id="m-reports">15</div>
+    <div class="metric-value" id="m-reports">—</div>
     <div class="metric-delta" id="d-reports"></div>
   </div>
 </div>
@@ -113,6 +113,7 @@
         <th>Open rate</th>
         <th>Click rate</th>
         <th>CTOR</th>
+        <th>Report download rate</th>
         <th>Opens</th>
         <th>Clicks</th>
         <th>Hard bounces</th>
@@ -120,6 +121,7 @@
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
+  <p class="dl-note">* Report download rate = clicks on the portal.jbrec.com report PDF link ÷ total sent. Partial data — more reports will be added as PDFs are uploaded. "—" indicates data not yet available.</p>
 </div>
 
 <p style="font-size:12px;color:#888780;text-align:center;margin-top:2rem;">JBREC · Data from HubSpot · jbrecllc.github.io/research-dashboard</p>
@@ -127,21 +129,21 @@
 <script>
 const data = {
   may: [
-    {name:'NHTI Insights',        sent:1331,  opened:615,  clicked:45,  hardBounced:0,  spamReports:0, unsubscribed:0},
-    {name:'Homebuilder Survey',   sent:12737, opened:4676, clicked:297, hardBounced:13, spamReports:0, unsubscribed:0},
-    {name:'HB Survey First Glance',sent:9444, opened:3448, clicked:293, hardBounced:22, spamReports:0, unsubscribed:0},
-    {name:'Real Estate Agent Survey',sent:12823,opened:4636,clicked:245,hardBounced:26,spamReports:0,unsubscribed:0},
-    {name:'USHAF',                sent:12950, opened:4676, clicked:286, hardBounced:20, spamReports:0, unsubscribed:0},
-    {name:'USCRAI',               sent:4407,  opened:1563, clicked:118, hardBounced:8,  spamReports:0, unsubscribed:0},
-    {name:'BP Dealer Survey',     sent:3194,  opened:1120, clicked:125, hardBounced:6,  spamReports:0, unsubscribed:0},
-    {name:'RCAF Mkt Fundamentals',sent:7084,  opened:2478, clicked:145, hardBounced:12, spamReports:0, unsubscribed:0},
-    {name:'RAF',                  sent:6156,  opened:2138, clicked:190, hardBounced:13, spamReports:0, unsubscribed:0},
-    {name:'Fix and Flip Survey',  sent:12825, opened:4398, clicked:265, hardBounced:14, spamReports:0, unsubscribed:0},
-    {name:'SFR REITs',            sent:6054,  opened:2070, clicked:98,  hardBounced:9,  spamReports:0, unsubscribed:0},
-    {name:'Apt. REITs',           sent:7065,  opened:2419, clicked:86,  hardBounced:8,  spamReports:0, unsubscribed:0},
-    {name:'SFR Mkt Fundamentals', sent:5879,  opened:1950, clicked:93,  hardBounced:8,  spamReports:0, unsubscribed:0},
-    {name:'BTR Survey',           sent:7053,  opened:2337, clicked:140, hardBounced:11, spamReports:0, unsubscribed:0},
-    {name:'BP Quarterly',         sent:3275,  opened:1043, clicked:96,  hardBounced:7,  spamReports:0, unsubscribed:0},
+    {name:'NHTI Insights',           sent:1331,  opened:615,  clicked:45,  hardBounced:0,  dlClicks:42},
+    {name:'Homebuilder Survey',      sent:12737, opened:4676, clicked:297, hardBounced:13, dlClicks:null},
+    {name:'HB Survey First Glance',  sent:9444,  opened:3448, clicked:293, hardBounced:22, dlClicks:238},
+    {name:'Real Estate Agent Survey',sent:12823, opened:4636, clicked:245, hardBounced:26, dlClicks:191},
+    {name:'USHAF',                   sent:12950, opened:4676, clicked:286, hardBounced:20, dlClicks:251},
+    {name:'USCRAI',                  sent:4407,  opened:1563, clicked:118, hardBounced:8,  dlClicks:113},
+    {name:'BP Dealer Survey',        sent:3194,  opened:1120, clicked:125, hardBounced:6,  dlClicks:106},
+    {name:'RCAF Mkt Fundamentals',   sent:7084,  opened:2478, clicked:145, hardBounced:12, dlClicks:101},
+    {name:'RAF',                     sent:6156,  opened:2138, clicked:190, hardBounced:13, dlClicks:176},
+    {name:'Fix and Flip Survey',     sent:12825, opened:4398, clicked:265, hardBounced:14, dlClicks:240},
+    {name:'SFR REITs',               sent:6054,  opened:2070, clicked:98,  hardBounced:9,  dlClicks:50},
+    {name:'Apt. REITs',              sent:7065,  opened:2419, clicked:86,  hardBounced:8,  dlClicks:64},
+    {name:'SFR Mkt Fundamentals',    sent:5879,  opened:1950, clicked:93,  hardBounced:8,  dlClicks:66},
+    {name:'BTR Survey',              sent:7053,  opened:2337, clicked:140, hardBounced:11, dlClicks:126},
+    {name:'BP Quarterly',            sent:3275,  opened:1043, clicked:96,  hardBounced:7,  dlClicks:88},
   ]
 };
 
@@ -153,7 +155,8 @@ function calc(rows) {
     ...r,
     openRate: parseFloat((r.opened/r.sent*100).toFixed(1)),
     clickRate: parseFloat((r.clicked/r.sent*100).toFixed(1)),
-    ctor: r.opened > 0 ? parseFloat((r.clicked/r.opened*100).toFixed(1)) : 0
+    ctor: r.opened > 0 ? parseFloat((r.clicked/r.opened*100).toFixed(1)) : 0,
+    dlRate: r.dlClicks !== null ? parseFloat((r.dlClicks/r.sent*100).toFixed(2)) : null
   })).sort((a,b) => b.openRate - a.openRate);
 }
 
@@ -189,7 +192,6 @@ function updateDashboard(month) {
   document.getElementById('m-click').textContent = (totalClicked/totalSent*100).toFixed(1)+'%';
   document.getElementById('m-reports').textContent = rows.length;
 
-  // Charts
   const labels = rows.map(r=>r.name);
   openChart.data.labels = labels;
   openChart.data.datasets[0].data = rows.map(r=>r.openRate);
@@ -204,13 +206,11 @@ function updateDashboard(month) {
   ctorChartObj.data.datasets[0].data = rows.map(r=>r.ctor);
   ctorChartObj.update();
 
-  // Sort by sent for list size chart
   const bySent = [...rows].sort((a,b)=>b.sent-a.sent);
   sentChartObj.data.labels = bySent.map(r=>r.name);
   sentChartObj.data.datasets[0].data = bySent.map(r=>r.sent);
   sentChartObj.update();
 
-  // Table
   const tbody = document.getElementById('tableBody');
   const maxOpen = Math.max(...rows.map(r=>r.openRate));
   tbody.innerHTML = rows.map(r => `
@@ -226,6 +226,7 @@ function updateDashboard(month) {
       </td>
       <td>${r.clickRate}%</td>
       <td>${r.ctor}%</td>
+      <td>${r.dlRate !== null ? r.dlRate+'%' : '<span style="color:#aaa">—</span>'}</td>
       <td>${r.opened.toLocaleString()}</td>
       <td>${r.clicked.toLocaleString()}</td>
       <td>${r.hardBounced > 0 ? '<span style="color:#993C1D">'+r.hardBounced+'</span>' : '0'}</td>
