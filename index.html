@@ -1,308 +1,566 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JBREC Research Email Analytics</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; padding: 2rem; }
-  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
-  .subtitle { font-size: 14px; color: #5f5e5a; margin-bottom: 1.5rem; }
-  .month-tabs { display: flex; gap: 8px; margin-bottom: 2rem; flex-wrap: wrap; }
-  .tab { padding: 8px 18px; border-radius: 20px; border: 1px solid #d3d1c7; background: #fff; font-size: 14px; cursor: pointer; transition: all 0.15s; }
-  .tab:hover { border-color: #888; }
-  .tab.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
-  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 2rem; }
-  .metric-card { background: #fff; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.1); padding: 1rem; }
-  .metric-label { font-size: 13px; color: #5f5e5a; margin-bottom: 4px; }
-  .metric-value { font-size: 26px; font-weight: 500; }
-  .metric-delta { font-size: 12px; margin-top: 4px; min-height: 16px; }
-  .section-label { font-size: 14px; font-weight: 500; color: #5f5e5a; margin-bottom: 10px; }
-  .chart-card { background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-  .email-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .email-table th { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e8e6e0; color: #5f5e5a; font-weight: 500; white-space: nowrap; }
-  .email-table td { padding: 9px 12px; border-bottom: 0.5px solid #f0ede8; }
-  .email-table tr:last-child td { border-bottom: none; }
-  .email-table tr:hover td { background: #faf9f7; }
-  .bar-cell { display: flex; align-items: center; gap: 8px; }
-  .mini-bar { height: 8px; border-radius: 4px; min-width: 2px; }
-  .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
-  .pill-green { background: #D1F5EA; color: #0A5740; }
-  .pill-blue { background: #D6EBFA; color: #1A4E7A; }
-  .pill-amber { background: #FEF0D5; color: #7A3D00; }
-  .pill-red { background: #FDDCDB; color: #7A1A19; }
-  .dl-note { font-size: 11px; color: #888780; margin-top: 8px; }
-  @media (max-width: 700px) {
-    .metric-grid { grid-template-columns: repeat(2, 1fr); }
-    .two-col { grid-template-columns: 1fr; }
-    body { padding: 1rem; }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JBREC Research Email Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --navy: #24384a;
+      --blue: #0097a9;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --text: #24384a;
+      --muted: #6b7785;
+      --border: #dce3ea;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      background: var(--navy);
+      color: white;
+      padding: 28px 32px;
+    }
+    header h1 { margin: 0 0 6px; font-size: 30px; }
+    header p { margin: 0; color: #d8e2ea; }
+    main { max-width: 1320px; margin: 0 auto; padding: 24px; }
+    .toolbar {
+      display: flex;
+      gap: 16px;
+      align-items: end;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      background: var(--card);
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(36,56,74,.06);
+    }
+    label { display: block; font-size: 13px; font-weight: bold; color: var(--muted); margin-bottom: 6px; }
+    select, input {
+      min-width: 280px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      background: white;
+      color: var(--text);
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(36,56,74,.06);
+    }
+    .kpi-title { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+    .kpi-value { font-size: 28px; font-weight: 700; margin-top: 8px; color: var(--blue); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+    .chart-card { min-height: 360px; }
+    .chart-card h2, .table-card h2 { margin: 0 0 14px; font-size: 20px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 10px 9px;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child { text-align: left; white-space: normal; }
+    th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    tr:hover { background: #f8fbfd; }
+    .note { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 12px; }
+    @media (max-width: 900px) {
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      .grid { grid-template-columns: 1fr; }
+      select, input { min-width: 100%; }
+      .toolbar { display: block; }
+      .toolbar > div { margin-bottom: 12px; }
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>JBREC Research Email Analytics</h1>
+    <p>April 2026 HubSpot email performance by report</p>
+  </header>
 
-<h1>JBREC Research Email Analytics</h1>
-<p class="subtitle">Broad research email performance by report — John Burns Research and Consulting</p>
+  <main>
+    <section class="toolbar">
+      <div>
+        <label for="reportFilter">Filter by report</label>
+        <select id="reportFilter">
+          <option value="All Reports">All Reports</option>
+        </select>
+      </div>
+      <div>
+        <label for="searchBox">Search table</label>
+        <input id="searchBox" type="search" placeholder="Search report name..." />
+      </div>
+    </section>
 
-<div class="month-tabs">
-  <button class="tab active" onclick="switchMonth('may')" id="tab-may">May 2026</button>
-</div>
+    <section class="kpis">
+      <div class="card"><div class="kpi-title">Deliveries</div><div class="kpi-value" id="kpiDeliveries">—</div></div>
+      <div class="card"><div class="kpi-title">Open rate</div><div class="kpi-value" id="kpiOpenRate">—</div></div>
+      <div class="card"><div class="kpi-title">Click rate</div><div class="kpi-value" id="kpiClickRate">—</div></div>
+      <div class="card"><div class="kpi-title">CTOR</div><div class="kpi-value" id="kpiCtor">—</div></div>
+      <div class="card"><div class="kpi-title">PDF clicks</div><div class="kpi-value" id="kpiPdfClicks">—</div></div>
+      <div class="card"><div class="kpi-title">Reports</div><div class="kpi-value" id="kpiReports">—</div></div>
+    </section>
 
-<div class="metric-grid">
-  <div class="metric-card">
-    <div class="metric-label">Total sent</div>
-    <div class="metric-value" id="m-sent">—</div>
-    <div class="metric-delta" id="d-sent"></div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Overall open rate</div>
-    <div class="metric-value" id="m-open">—</div>
-    <div class="metric-delta" id="d-open"></div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Overall click rate</div>
-    <div class="metric-value" id="m-click">—</div>
-    <div class="metric-delta" id="d-click"></div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Total reports sent</div>
-    <div class="metric-value" id="m-reports">—</div>
-    <div class="metric-delta" id="d-reports"></div>
-  </div>
-</div>
+    <section class="grid">
+      <div class="card chart-card">
+        <h2>Open rate by report</h2>
+        <canvas id="openChart"></canvas>
+      </div>
+      <div class="card chart-card">
+        <h2>Click rate by report</h2>
+        <canvas id="clickChart"></canvas>
+      </div>
+      <div class="card chart-card">
+        <h2>Click-to-open rate by report</h2>
+        <canvas id="ctorChart"></canvas>
+      </div>
+      <div class="card chart-card">
+        <h2>Report PDF download rate</h2>
+        <canvas id="downloadChart"></canvas>
+      </div>
+    </section>
 
-<div class="chart-card">
-  <p class="section-label">Open rate by report</p>
-  <div style="position:relative;width:100%;height:380px;">
-    <canvas id="openRateChart"></canvas>
-  </div>
-</div>
+    <section class="card table-card">
+      <h2 id="tableTitle">All reports — full breakdown</h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Report</th>
+              <th>Sent date</th>
+              <th>Deliveries</th>
+              <th>Open rate</th>
+              <th>Click rate</th>
+              <th>CTOR</th>
+              <th>PDF clicks</th>
+              <th>PDF download rate</th>
+              <th>Unique opens</th>
+              <th>Unique clicks</th>
+              <th>Bounces</th>
+              <th>Unsubs</th>
+              <th>Spam</th>
+            </tr>
+          </thead>
+          <tbody id="reportRows"></tbody>
+        </table>
+      </div>
+      <p class="note">PDF download rate = clicks on the main portal.jbrec.com report PDF link divided by successful deliveries. Rates shown are HubSpot “including bots” metrics from the uploaded April PDFs.</p>
+    </section>
+  </main>
 
-<div class="two-col">
-  <div class="chart-card">
-    <p class="section-label">Click rate by report</p>
-    <div style="position:relative;width:100%;height:340px;">
-      <canvas id="clickRateChart"></canvas>
-    </div>
-  </div>
-  <div class="chart-card">
-    <p class="section-label">Click-to-open rate by report <span style="font-weight:400;font-size:12px;">(of openers who clicked)</span></p>
-    <div style="position:relative;width:100%;height:340px;">
-      <canvas id="ctorChart"></canvas>
-    </div>
-  </div>
-</div>
-
-<div class="chart-card">
-  <p class="section-label">List size by report</p>
-  <div style="position:relative;width:100%;height:320px;">
-    <canvas id="sentChart"></canvas>
-  </div>
-</div>
-
-<div class="chart-card">
-  <p class="section-label">All reports — full breakdown</p>
-  <table class="email-table" id="emailTable">
-    <thead>
-      <tr>
-        <th>Report</th>
-        <th>Sent</th>
-        <th>Open rate</th>
-        <th>Click rate</th>
-        <th>CTOR</th>
-        <th>Report download rate</th>
-        <th>Opens</th>
-        <th>Clicks</th>
-        <th>Hard bounces</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-  <p class="dl-note">* Report download rate = clicks on the portal.jbrec.com report PDF link ÷ total sent. Partial data — more reports will be added as PDFs are uploaded. "—" indicates data not yet available.</p>
-</div>
-
-<p style="font-size:12px;color:#888780;text-align:center;margin-top:2rem;">JBREC · Data from HubSpot · jbrecllc.github.io/research-dashboard</p>
-
-<script>
-const data = {
-  may: [
-    {name:'NHTI Insights',           sent:1331,  opened:615,  clicked:45,  hardBounced:0,  dlClicks:42},
-    {name:'Homebuilder Survey',      sent:12737, opened:4676, clicked:297, hardBounced:13, dlClicks:null},
-    {name:'HB Survey First Glance',  sent:9444,  opened:3448, clicked:293, hardBounced:22, dlClicks:238},
-    {name:'Real Estate Agent Survey',sent:12823, opened:4636, clicked:245, hardBounced:26, dlClicks:191},
-    {name:'USHAF',                   sent:12950, opened:4676, clicked:286, hardBounced:20, dlClicks:251},
-    {name:'USCRAI',                  sent:4407,  opened:1563, clicked:118, hardBounced:8,  dlClicks:113},
-    {name:'BP Dealer Survey',        sent:3194,  opened:1120, clicked:125, hardBounced:6,  dlClicks:106},
-    {name:'RCAF Mkt Fundamentals',   sent:7084,  opened:2478, clicked:145, hardBounced:12, dlClicks:101},
-    {name:'RAF',                     sent:6156,  opened:2138, clicked:190, hardBounced:13, dlClicks:176},
-    {name:'Fix and Flip Survey',     sent:12825, opened:4398, clicked:265, hardBounced:14, dlClicks:240},
-    {name:'SFR REITs',               sent:6054,  opened:2070, clicked:98,  hardBounced:9,  dlClicks:50},
-    {name:'Apt. REITs',              sent:7065,  opened:2419, clicked:86,  hardBounced:8,  dlClicks:64},
-    {name:'SFR Mkt Fundamentals',    sent:5879,  opened:1950, clicked:93,  hardBounced:8,  dlClicks:66},
-    {name:'BTR Survey',              sent:7053,  opened:2337, clicked:140, hardBounced:11, dlClicks:126},
-    {name:'BP Quarterly',            sent:3275,  opened:1043, clicked:96,  hardBounced:7,  dlClicks:88},
-  ]
-};
-
-let currentMonth = 'may';
-let openChart, clickChart, ctorChartObj, sentChartObj;
-
-function calc(rows) {
-  return rows.map(r => ({
-    ...r,
-    openRate: parseFloat((r.opened/r.sent*100).toFixed(1)),
-    clickRate: parseFloat((r.clicked/r.sent*100).toFixed(1)),
-    ctor: r.opened > 0 ? parseFloat((r.clicked/r.opened*100).toFixed(1)) : 0,
-    dlRate: r.dlClicks !== null ? parseFloat((r.dlClicks/r.sent*100).toFixed(2)) : null
-  })).sort((a,b) => b.openRate - a.openRate);
-}
-
-function openRateColor(r) {
-  if (r >= 40) return '#1D9E75';
-  if (r >= 35) return '#5DCAA5';
-  if (r >= 30) return '#378ADD';
-  return '#EF9F27';
-}
-
-function ratingPill(rate) {
-  if (rate >= 40) return '<span class="pill pill-green">Strong</span>';
-  if (rate >= 35) return '<span class="pill pill-blue">Good</span>';
-  if (rate >= 30) return '<span class="pill pill-amber">Average</span>';
-  return '<span class="pill pill-red">Low</span>';
-}
-
-function switchMonth(month) {
-  currentMonth = month;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-'+month).classList.add('active');
-  updateDashboard(month);
-}
-
-function updateDashboard(month) {
-  const rows = calc(data[month]);
-  const totalSent = rows.reduce((s,r)=>s+r.sent,0);
-  const totalOpened = rows.reduce((s,r)=>s+r.opened,0);
-  const totalClicked = rows.reduce((s,r)=>s+r.clicked,0);
-
-  document.getElementById('m-sent').textContent = totalSent.toLocaleString();
-  document.getElementById('m-open').textContent = (totalOpened/totalSent*100).toFixed(1)+'%';
-  document.getElementById('m-click').textContent = (totalClicked/totalSent*100).toFixed(1)+'%';
-  document.getElementById('m-reports').textContent = rows.length;
-
-  const labels = rows.map(r=>r.name);
-  openChart.data.labels = labels;
-  openChart.data.datasets[0].data = rows.map(r=>r.openRate);
-  openChart.data.datasets[0].backgroundColor = rows.map(r=>openRateColor(r.openRate));
-  openChart.update();
-
-  clickChart.data.labels = labels;
-  clickChart.data.datasets[0].data = rows.map(r=>r.clickRate);
-  clickChart.update();
-
-  ctorChartObj.data.labels = labels;
-  ctorChartObj.data.datasets[0].data = rows.map(r=>r.ctor);
-  ctorChartObj.update();
-
-  const bySent = [...rows].sort((a,b)=>b.sent-a.sent);
-  sentChartObj.data.labels = bySent.map(r=>r.name);
-  sentChartObj.data.datasets[0].data = bySent.map(r=>r.sent);
-  sentChartObj.update();
-
-  const tbody = document.getElementById('tableBody');
-  const maxOpen = Math.max(...rows.map(r=>r.openRate));
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      <td><strong>${r.name}</strong></td>
-      <td>${r.sent.toLocaleString()}</td>
-      <td>
-        <div class="bar-cell">
-          <div class="mini-bar" style="width:${Math.round(r.openRate/maxOpen*120)}px;background:${openRateColor(r.openRate)}"></div>
-          <span>${r.openRate}%</span>
-          ${ratingPill(r.openRate)}
-        </div>
-      </td>
-      <td>${r.clickRate}%</td>
-      <td>${r.ctor}%</td>
-      <td>${r.dlRate !== null ? r.dlRate+'%' : '<span style="color:#aaa">—</span>'}</td>
-      <td>${r.opened.toLocaleString()}</td>
-      <td>${r.clicked.toLocaleString()}</td>
-      <td>${r.hardBounced > 0 ? '<span style="color:#993C1D">'+r.hardBounced+'</span>' : '0'}</td>
-    </tr>
-  `).join('');
-}
-
-window.addEventListener('load', () => {
-  const rows = calc(data.may);
-  const labels = rows.map(r=>r.name);
-
-  openChart = new Chart(document.getElementById('openRateChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{ label:'Open rate %', data: rows.map(r=>r.openRate), backgroundColor: rows.map(r=>openRateColor(r.openRate)), borderWidth:0, borderRadius:4 }] },
-    options: {
-      indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.raw}%`}} },
-      scales: {
-        x: { min:0, max:55, ticks:{callback:v=>v+'%'}, grid:{color:'rgba(0,0,0,0.06)'},
-          afterDraw(chart) {
-            const ctx2 = chart.ctx;
-            const xAxis = chart.scales.x;
-            const avg = 35.2;
-            const xPos = xAxis.getPixelForValue(avg);
-            ctx2.save();
-            ctx2.beginPath();
-            ctx2.moveTo(xPos, chart.chartArea.top);
-            ctx2.lineTo(xPos, chart.chartArea.bottom);
-            ctx2.strokeStyle = '#E24B4A';
-            ctx2.lineWidth = 1.5;
-            ctx2.setLineDash([4,3]);
-            ctx2.stroke();
-            ctx2.fillStyle = '#E24B4A';
-            ctx2.font = '11px -apple-system,sans-serif';
-            ctx2.fillText('Avg 35.2%', xPos+4, chart.chartArea.top+12);
-            ctx2.restore();
-          }
-        },
-        y: { ticks:{font:{size:12}} }
+  <script>
+    const reports = [
+      {
+            "report": "NHTI Insights",
+            "sent_date": "Apr 27, 2026",
+            "deliveries": 1340,
+            "open_rate": 47.54,
+            "click_rate": 5.22,
+            "ctor": 10.99,
+            "opens": 637,
+            "clicks": 70,
+            "total_opens": 1941,
+            "total_clicks": 426,
+            "bounces": 10,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 62.9,
+            "pdf_clicks": 59,
+            "download_rate": 4.4
+      },
+      {
+            "report": "RAF",
+            "sent_date": "Apr 22, 2026",
+            "deliveries": 6084,
+            "open_rate": 37.92,
+            "click_rate": 4.47,
+            "ctor": 11.79,
+            "opens": 2307,
+            "clicks": 272,
+            "total_opens": 5433,
+            "total_clicks": 640,
+            "bounces": 16,
+            "unsubs": 1,
+            "spam": 1,
+            "read": 59.5,
+            "pdf_clicks": 269,
+            "download_rate": 4.42
+      },
+      {
+            "report": "RCAF Market Fundamentals",
+            "sent_date": "Apr 28, 2026",
+            "deliveries": 7033,
+            "open_rate": 34.11,
+            "click_rate": 2.0,
+            "ctor": 5.88,
+            "opens": 2399,
+            "clicks": 141,
+            "total_opens": 4552,
+            "total_clicks": 306,
+            "bounces": 23,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 50.0,
+            "pdf_clicks": 107,
+            "download_rate": 1.52
+      },
+      {
+            "report": "RCAF Quarterly",
+            "sent_date": "Apr 24, 2026",
+            "deliveries": 6874,
+            "open_rate": 35.85,
+            "click_rate": 1.75,
+            "ctor": 4.87,
+            "opens": 2464,
+            "clicks": 120,
+            "total_opens": 4698,
+            "total_clicks": 236,
+            "bounces": 21,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 53.9,
+            "pdf_clicks": 89,
+            "download_rate": 1.29
+      },
+      {
+            "report": "Real Estate Agent Survey",
+            "sent_date": "Apr 16, 2026",
+            "deliveries": 12322,
+            "open_rate": 34.53,
+            "click_rate": 1.36,
+            "ctor": 3.92,
+            "opens": 4255,
+            "clicks": 167,
+            "total_opens": 7962,
+            "total_clicks": 369,
+            "bounces": 445,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 54.4,
+            "pdf_clicks": 147,
+            "download_rate": 1.19
+      },
+      {
+            "report": "SFR Market Fundamentals",
+            "sent_date": "Apr 17, 2026",
+            "deliveries": 5877,
+            "open_rate": 34.59,
+            "click_rate": 1.67,
+            "ctor": 4.82,
+            "opens": 2033,
+            "clicks": 98,
+            "total_opens": 3837,
+            "total_clicks": 179,
+            "bounces": 21,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 47.6,
+            "pdf_clicks": 75,
+            "download_rate": 1.28
+      },
+      {
+            "report": "USHAF",
+            "sent_date": "Apr 16, 2026",
+            "deliveries": 12718,
+            "open_rate": 38.64,
+            "click_rate": 3.88,
+            "ctor": 10.03,
+            "opens": 4914,
+            "clicks": 493,
+            "total_opens": 11223,
+            "total_clicks": 974,
+            "bounces": 168,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 60.4,
+            "pdf_clicks": 478,
+            "download_rate": 3.76
+      },
+      {
+            "report": "USRI",
+            "sent_date": "Apr 13, 2026",
+            "deliveries": 3210,
+            "open_rate": 34.21,
+            "click_rate": 4.86,
+            "ctor": 14.21,
+            "opens": 1098,
+            "clicks": 156,
+            "total_opens": 2463,
+            "total_clicks": 336,
+            "bounces": 9,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 50.7,
+            "pdf_clicks": 119,
+            "download_rate": 3.71
+      },
+      {
+            "report": "BADI",
+            "sent_date": "Apr 8, 2026",
+            "deliveries": 6950,
+            "open_rate": 36.73,
+            "click_rate": 1.93,
+            "ctor": 5.25,
+            "opens": 2553,
+            "clicks": 134,
+            "total_opens": 4864,
+            "total_clicks": 238,
+            "bounces": 26,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 53.6,
+            "pdf_clicks": 98,
+            "download_rate": 1.41
+      },
+      {
+            "report": "BP Dealer Survey",
+            "sent_date": "Apr 20, 2026",
+            "deliveries": 3170,
+            "open_rate": 36.06,
+            "click_rate": 2.97,
+            "ctor": 8.22,
+            "opens": 1143,
+            "clicks": 94,
+            "total_opens": 2508,
+            "total_clicks": 161,
+            "bounces": 9,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 61.5,
+            "pdf_clicks": 91,
+            "download_rate": 2.87
+      },
+      {
+            "report": "HBAF",
+            "sent_date": "Apr 29, 2026",
+            "deliveries": 2433,
+            "open_rate": 39.09,
+            "click_rate": 4.36,
+            "ctor": 11.15,
+            "opens": 951,
+            "clicks": 106,
+            "total_opens": 2023,
+            "total_clicks": 223,
+            "bounces": 3,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 57.6,
+            "pdf_clicks": 94,
+            "download_rate": 3.86
+      },
+      {
+            "report": "Homebuilder Survey First Glance",
+            "sent_date": "Apr 2, 2026",
+            "deliveries": 9294,
+            "open_rate": 37.24,
+            "click_rate": 2.55,
+            "ctor": 6.85,
+            "opens": 3461,
+            "clicks": 237,
+            "total_opens": 7341,
+            "total_clicks": 527,
+            "bounces": 68,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 60.6,
+            "pdf_clicks": 185,
+            "download_rate": 1.99
+      },
+      {
+            "report": "Homebuilder Survey",
+            "sent_date": "Apr 6, 2026",
+            "deliveries": 12566,
+            "open_rate": 34.75,
+            "click_rate": 2.63,
+            "ctor": 7.56,
+            "opens": 4367,
+            "clicks": 330,
+            "total_opens": 9349,
+            "total_clicks": 635,
+            "bounces": 109,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 54.5,
+            "pdf_clicks": 265,
+            "download_rate": 2.11
+      },
+      {
+            "report": "KBMI",
+            "sent_date": "Apr 21, 2026",
+            "deliveries": 3180,
+            "open_rate": 34.4,
+            "click_rate": 1.89,
+            "ctor": 5.48,
+            "opens": 1094,
+            "clicks": 60,
+            "total_opens": 2052,
+            "total_clicks": 164,
+            "bounces": 8,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 59.0,
+            "pdf_clicks": 58,
+            "download_rate": 1.82
+      },
+      {
+            "report": "Land Survey",
+            "sent_date": "Apr 14, 2026",
+            "deliveries": 12210,
+            "open_rate": 37.91,
+            "click_rate": 2.5,
+            "ctor": 6.59,
+            "opens": 4629,
+            "clicks": 305,
+            "total_opens": 9536,
+            "total_clicks": 633,
+            "bounces": 533,
+            "unsubs": 0,
+            "spam": 0,
+            "read": 57.5,
+            "pdf_clicks": 255,
+            "download_rate": 2.09
       }
-    }
-  });
+];
 
-  clickChart = new Chart(document.getElementById('clickRateChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{ label:'Click rate %', data: rows.map(r=>r.clickRate), backgroundColor:'#378ADD', borderWidth:0, borderRadius:4 }] },
-    options: {
-      indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.raw}%`}} },
-      scales: { x:{min:0,max:6,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:12}}} }
-    }
-  });
+    const fmtNum = n => n.toLocaleString();
+    const fmtPct = n => `${Number(n).toFixed(2).replace(/\.00$/, '')}%`;
+    const weightedRate = (num, den) => den ? (num / den * 100) : 0;
 
-  ctorChartObj = new Chart(document.getElementById('ctorChart'), {
-    type: 'bar',
-    data: { labels, datasets: [{ label:'CTOR %', data: rows.map(r=>r.ctor), backgroundColor:'#7B5EA7', borderWidth:0, borderRadius:4 }] },
-    options: {
-      indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.raw}%`}} },
-      scales: { x:{min:0,max:15,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:12}}} }
-    }
-  });
+    const reportFilter = document.getElementById("reportFilter");
+    const searchBox = document.getElementById("searchBox");
 
-  const bySent = [...rows].sort((a,b)=>b.sent-a.sent);
-  sentChartObj = new Chart(document.getElementById('sentChart'), {
-    type: 'bar',
-    data: { labels: bySent.map(r=>r.name), datasets: [{ label:'List size', data: bySent.map(r=>r.sent), backgroundColor:'#D3CFC6', borderWidth:0, borderRadius:4 }] },
-    options: {
-      indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.raw.toLocaleString()} sent`}} },
-      scales: { x:{ticks:{callback:v=>v.toLocaleString()},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:12}}} }
-    }
-  });
+    reports.forEach(r => {
+      const option = document.createElement("option");
+      option.value = r.report;
+      option.textContent = r.report;
+      reportFilter.appendChild(option);
+    });
 
-  updateDashboard('may');
-});
-</script>
+    let charts = {};
+
+    function getSelectedRows() {
+      const selected = reportFilter.value;
+      const search = searchBox.value.trim().toLowerCase();
+      return reports.filter(r => {
+        const matchesReport = selected === "All Reports" || r.report === selected;
+        const matchesSearch = !search || r.report.toLowerCase().includes(search);
+        return matchesReport && matchesSearch;
+      });
+    }
+
+    function updateKpis(rows) {
+      const deliveries = rows.reduce((sum, r) => sum + r.deliveries, 0);
+      const opens = rows.reduce((sum, r) => sum + r.opens, 0);
+      const clicks = rows.reduce((sum, r) => sum + r.clicks, 0);
+      const pdfClicks = rows.reduce((sum, r) => sum + r.pdf_clicks, 0);
+
+      document.getElementById("kpiDeliveries").textContent = fmtNum(deliveries);
+      document.getElementById("kpiOpenRate").textContent = fmtPct(weightedRate(opens, deliveries));
+      document.getElementById("kpiClickRate").textContent = fmtPct(weightedRate(clicks, deliveries));
+      document.getElementById("kpiCtor").textContent = fmtPct(weightedRate(clicks, opens));
+      document.getElementById("kpiPdfClicks").textContent = fmtNum(pdfClicks);
+      document.getElementById("kpiReports").textContent = fmtNum(rows.length);
+    }
+
+    function makeChart(id, label, rows, field) {
+      if (charts[id]) charts[id].destroy();
+      const ctx = document.getElementById(id);
+      charts[id] = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: rows.map(r => r.report),
+          datasets: [{
+            label,
+            data: rows.map(r => r[field])
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: context => `${label}: ${fmtPct(context.parsed.y)}`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { callback: value => value + "%" }
+            },
+            x: {
+              ticks: { autoSkip: false, maxRotation: 65, minRotation: 30 }
+            }
+          }
+        }
+      });
+    }
+
+    function updateTable(rows) {
+      const tbody = document.getElementById("reportRows");
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.report}</td>
+          <td>${r.sent_date}</td>
+          <td>${fmtNum(r.deliveries)}</td>
+          <td>${fmtPct(r.open_rate)}</td>
+          <td>${fmtPct(r.click_rate)}</td>
+          <td>${fmtPct(r.ctor)}</td>
+          <td>${fmtNum(r.pdf_clicks)}</td>
+          <td>${fmtPct(r.download_rate)}</td>
+          <td>${fmtNum(r.opens)}</td>
+          <td>${fmtNum(r.clicks)}</td>
+          <td>${fmtNum(r.bounces)}</td>
+          <td>${fmtNum(r.unsubs)}</td>
+          <td>${fmtNum(r.spam)}</td>
+        </tr>
+      `).join("");
+      document.getElementById("tableTitle").textContent =
+        reportFilter.value === "All Reports" ? "All reports — full breakdown" : `${reportFilter.value} — report breakdown`;
+    }
+
+    function render() {
+      const rows = getSelectedRows();
+      updateKpis(rows);
+      updateTable(rows);
+      makeChart("openChart", "Open rate", rows, "open_rate");
+      makeChart("clickChart", "Click rate", rows, "click_rate");
+      makeChart("ctorChart", "CTOR", rows, "ctor");
+      makeChart("downloadChart", "PDF download rate", rows, "download_rate");
+    }
+
+    reportFilter.addEventListener("change", render);
+    searchBox.addEventListener("input", render);
+    render();
+  </script>
 </body>
 </html>
