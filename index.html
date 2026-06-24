@@ -10,7 +10,7 @@
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; padding: 2rem; }
   h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
   .subtitle { font-size: 14px; color: #5f5e5a; margin-bottom: 1.5rem; }
-  .controls { display:grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap:12px; margin-bottom:1.5rem; }
+  .controls { display:grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap:12px; margin-bottom:1.5rem; }
   .control-card { background:#fff; border:0.5px solid rgba(0,0,0,0.1); border-radius:10px; padding:12px; }
   label { display:block; font-size:12px; color:#5f5e5a; margin-bottom:6px; font-weight:500; }
   select { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #d3d1c7; background:#fff; font-size:14px; }
@@ -60,10 +60,6 @@
     <select id="categoryFilter"></select>
   </div>
   <div class="control-card">
-    <label for="cadenceFilter">Cadence</label>
-    <select id="cadenceFilter"></select>
-  </div>
-  <div class="control-card">
     <label for="reportFilter">Report</label>
     <select id="reportFilter"></select>
   </div>
@@ -98,3 +94,684 @@
 </div>
 
 <div class="two-col">
+  <div class="chart-card">
+    <p class="section-label">List size by report</p>
+    <div style="position:relative;width:100%;height:320px;"><canvas id="sentChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <p class="section-label">Category summary</p>
+    <div style="position:relative;width:100%;height:320px;"><canvas id="categoryChart"></canvas></div>
+  </div>
+</div>
+
+<div class="chart-card">
+  <p class="section-label">Full breakdown</p>
+  <table class="email-table" id="emailTable">
+    <thead>
+      <tr>
+        <th>Month</th>
+        <th>Report</th>
+        <th>Category</th>
+        <th>Sent</th>
+        <th>Open rate</th>
+        <th>Click rate</th>
+        <th>CTOR</th>
+        <th>Report download rate</th>
+        <th>Opens</th>
+        <th>Clicks</th>
+        <th>Hard bounces</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <p class="dl-note">* Report download rate = clicks on the portal.jbrec.com report PDF link ÷ total sent. “—” indicates data not available for that report/month.</p>
+</div>
+
+<p style="font-size:12px;color:#888780;text-align:center;margin-top:2rem;">JBREC · Data from HubSpot</p>
+
+<script>
+const data = [
+  {
+    "month": "April 2026",
+    "report": "NHTI Insights",
+    "sent_date": "Apr 27, 2026",
+    "sent": 1340,
+    "opened": 637,
+    "clicked": 70,
+    "hardBounced": 10,
+    "dlClicks": 59,
+    "category": "NHTI",
+    "openRate": 47.5,
+    "clickRate": 5.2,
+    "ctor": 11.0,
+    "dlRate": 4.4
+  },
+  {
+    "month": "April 2026",
+    "report": "RAF",
+    "sent_date": "Apr 22, 2026",
+    "sent": 6084,
+    "opened": 2307,
+    "clicked": 272,
+    "hardBounced": 16,
+    "dlClicks": 269,
+    "category": "MAF, BP, HBAF",
+    "openRate": 37.9,
+    "clickRate": 4.5,
+    "ctor": 11.8,
+    "dlRate": 4.42
+  },
+  {
+    "month": "April 2026",
+    "report": "RCAF Market Fundamentals",
+    "sent_date": "Apr 28, 2026",
+    "sent": 7033,
+    "opened": 2399,
+    "clicked": 141,
+    "hardBounced": 23,
+    "dlClicks": 107,
+    "category": "Rental Communities & SFR",
+    "openRate": 34.1,
+    "clickRate": 2.0,
+    "ctor": 5.9,
+    "dlRate": 1.52
+  },
+  {
+    "month": "April 2026",
+    "report": "RCAF Quarterly",
+    "sent_date": "Apr 24, 2026",
+    "sent": 6874,
+    "opened": 2464,
+    "clicked": 120,
+    "hardBounced": 21,
+    "dlClicks": 89,
+    "category": "Rental Communities & SFR",
+    "openRate": 35.8,
+    "clickRate": 1.7,
+    "ctor": 4.9,
+    "dlRate": 1.29
+  },
+  {
+    "month": "April 2026",
+    "report": "Real Estate Agent Survey",
+    "sent_date": "Apr 16, 2026",
+    "sent": 12322,
+    "opened": 4255,
+    "clicked": 167,
+    "hardBounced": 445,
+    "dlClicks": 147,
+    "category": "All",
+    "openRate": 34.5,
+    "clickRate": 1.4,
+    "ctor": 3.9,
+    "dlRate": 1.19
+  },
+  {
+    "month": "April 2026",
+    "report": "SFR Market Fundamentals",
+    "sent_date": "Apr 17, 2026",
+    "sent": 5877,
+    "opened": 2033,
+    "clicked": 98,
+    "hardBounced": 21,
+    "dlClicks": 75,
+    "category": "Single-Family Rental",
+    "openRate": 34.6,
+    "clickRate": 1.7,
+    "ctor": 4.8,
+    "dlRate": 1.28
+  },
+  {
+    "month": "April 2026",
+    "report": "USHAF",
+    "sent_date": "Apr 16, 2026",
+    "sent": 12718,
+    "opened": 4914,
+    "clicked": 493,
+    "hardBounced": 168,
+    "dlClicks": 478,
+    "category": "All",
+    "openRate": 38.6,
+    "clickRate": 3.9,
+    "ctor": 10.0,
+    "dlRate": 3.76
+  },
+  {
+    "month": "April 2026",
+    "report": "USRI",
+    "sent_date": "Apr 13, 2026",
+    "sent": 3210,
+    "opened": 1098,
+    "clicked": 156,
+    "hardBounced": 9,
+    "dlClicks": 119,
+    "category": "Building Products",
+    "openRate": 34.2,
+    "clickRate": 4.9,
+    "ctor": 14.2,
+    "dlRate": 3.71
+  },
+  {
+    "month": "April 2026",
+    "report": "BADI",
+    "sent_date": "Apr 8, 2026",
+    "sent": 6950,
+    "opened": 2553,
+    "clicked": 134,
+    "hardBounced": 26,
+    "dlClicks": 98,
+    "category": "Rental Communities & SFR",
+    "openRate": 36.7,
+    "clickRate": 1.9,
+    "ctor": 5.2,
+    "dlRate": 1.41
+  },
+  {
+    "month": "April 2026",
+    "report": "BP Dealer Survey",
+    "sent_date": "Apr 20, 2026",
+    "sent": 3170,
+    "opened": 1143,
+    "clicked": 94,
+    "hardBounced": 9,
+    "dlClicks": 91,
+    "category": "Building Products",
+    "openRate": 36.1,
+    "clickRate": 3.0,
+    "ctor": 8.2,
+    "dlRate": 2.87
+  },
+  {
+    "month": "April 2026",
+    "report": "HBAF",
+    "sent_date": "Apr 29, 2026",
+    "sent": 2433,
+    "opened": 951,
+    "clicked": 106,
+    "hardBounced": 3,
+    "dlClicks": 94,
+    "category": "MAF, BP, HBAF",
+    "openRate": 39.1,
+    "clickRate": 4.4,
+    "ctor": 11.1,
+    "dlRate": 3.86
+  },
+  {
+    "month": "April 2026",
+    "report": "Homebuilder Survey First Glance",
+    "sent_date": "Apr 2, 2026",
+    "sent": 9294,
+    "opened": 3461,
+    "clicked": 237,
+    "hardBounced": 68,
+    "dlClicks": 185,
+    "category": "All",
+    "openRate": 37.2,
+    "clickRate": 2.6,
+    "ctor": 6.8,
+    "dlRate": 1.99
+  },
+  {
+    "month": "April 2026",
+    "report": "Homebuilder Survey",
+    "sent_date": "Apr 6, 2026",
+    "sent": 12566,
+    "opened": 4367,
+    "clicked": 330,
+    "hardBounced": 109,
+    "dlClicks": 265,
+    "category": "All",
+    "openRate": 34.8,
+    "clickRate": 2.6,
+    "ctor": 7.6,
+    "dlRate": 2.11
+  },
+  {
+    "month": "April 2026",
+    "report": "KBMI",
+    "sent_date": "Apr 21, 2026",
+    "sent": 3180,
+    "opened": 1094,
+    "clicked": 60,
+    "hardBounced": 8,
+    "dlClicks": 58,
+    "category": "Building Products",
+    "openRate": 34.4,
+    "clickRate": 1.9,
+    "ctor": 5.5,
+    "dlRate": 1.82
+  },
+  {
+    "month": "April 2026",
+    "report": "Land Survey",
+    "sent_date": "Apr 14, 2026",
+    "sent": 12210,
+    "opened": 4629,
+    "clicked": 305,
+    "hardBounced": 533,
+    "dlClicks": 255,
+    "category": "All",
+    "openRate": 37.9,
+    "clickRate": 2.5,
+    "ctor": 6.6,
+    "dlRate": 2.09
+  },
+  {
+    "month": "May 2026",
+    "report": "NHTI Insights",
+    "sent_date": "May 2026",
+    "sent": 1331,
+    "opened": 615,
+    "clicked": 45,
+    "hardBounced": 0,
+    "dlClicks": null,
+    "category": "NHTI",
+    "openRate": 46.2,
+    "clickRate": 3.4,
+    "ctor": 7.3,
+    "dlRate": null
+  },
+  {
+    "month": "May 2026",
+    "report": "Homebuilder Survey",
+    "sent_date": "May 2026",
+    "sent": 12737,
+    "opened": 4676,
+    "clicked": 297,
+    "hardBounced": 13,
+    "dlClicks": null,
+    "category": "All",
+    "openRate": 36.7,
+    "clickRate": 2.3,
+    "ctor": 6.4,
+    "dlRate": null
+  },
+  {
+    "month": "May 2026",
+    "report": "Homebuilder Survey First Glance",
+    "sent_date": "May 2026",
+    "sent": 9444,
+    "opened": 3448,
+    "clicked": 293,
+    "hardBounced": 22,
+    "dlClicks": 238,
+    "category": "All",
+    "openRate": 36.5,
+    "clickRate": 3.1,
+    "ctor": 8.5,
+    "dlRate": 2.52
+  },
+  {
+    "month": "May 2026",
+    "report": "Real Estate Agent Survey",
+    "sent_date": "May 2026",
+    "sent": 12823,
+    "opened": 4636,
+    "clicked": 245,
+    "hardBounced": 26,
+    "dlClicks": null,
+    "category": "All",
+    "openRate": 36.2,
+    "clickRate": 1.9,
+    "ctor": 5.3,
+    "dlRate": null
+  },
+  {
+    "month": "May 2026",
+    "report": "USHAF",
+    "sent_date": "May 2026",
+    "sent": 12950,
+    "opened": 4676,
+    "clicked": 286,
+    "hardBounced": 20,
+    "dlClicks": null,
+    "category": "All",
+    "openRate": 36.1,
+    "clickRate": 2.2,
+    "ctor": 6.1,
+    "dlRate": null
+  },
+  {
+    "month": "May 2026",
+    "report": "USCRAI",
+    "sent_date": "May 2026",
+    "sent": 4407,
+    "opened": 1563,
+    "clicked": 118,
+    "hardBounced": 8,
+    "dlClicks": null,
+    "category": "NHTI",
+    "openRate": 35.5,
+    "clickRate": 2.7,
+    "ctor": 7.5,
+    "dlRate": null
+  },
+  {
+    "month": "May 2026",
+    "report": "BP Dealer Survey",
+    "sent_date": "May 2026",
+    "sent": 3194,
+    "opened": 1120,
+    "clicked": 125,
+    "hardBounced": 6,
+    "dlClicks": 106,
+    "category": "Building Products",
+    "openRate": 35.1,
+    "clickRate": 3.9,
+    "ctor": 11.2,
+    "dlRate": 3.32
+  },
+  {
+    "month": "May 2026",
+    "report": "RCAF Market Fundamentals",
+    "sent_date": "May 2026",
+    "sent": 7084,
+    "opened": 2478,
+    "clicked": 145,
+    "hardBounced": 12,
+    "dlClicks": 101,
+    "category": "Rental Communities & SFR",
+    "openRate": 35.0,
+    "clickRate": 2.0,
+    "ctor": 5.9,
+    "dlRate": 1.43
+  },
+  {
+    "month": "May 2026",
+    "report": "RAF",
+    "sent_date": "May 2026",
+    "sent": 6156,
+    "opened": 2138,
+    "clicked": 190,
+    "hardBounced": 13,
+    "dlClicks": 176,
+    "category": "MAF, BP, HBAF",
+    "openRate": 34.7,
+    "clickRate": 3.1,
+    "ctor": 8.9,
+    "dlRate": 2.86
+  },
+  {
+    "month": "May 2026",
+    "report": "Fix and Flip Survey",
+    "sent_date": "May 2026",
+    "sent": 12825,
+    "opened": 4398,
+    "clicked": 265,
+    "hardBounced": 14,
+    "dlClicks": 240,
+    "category": "All",
+    "openRate": 34.3,
+    "clickRate": 2.1,
+    "ctor": 6.0,
+    "dlRate": 1.87
+  },
+  {
+    "month": "May 2026",
+    "report": "SFR REITs",
+    "sent_date": "May 2026",
+    "sent": 6054,
+    "opened": 2070,
+    "clicked": 98,
+    "hardBounced": 9,
+    "dlClicks": 50,
+    "category": "Single-Family Rental",
+    "openRate": 34.2,
+    "clickRate": 1.6,
+    "ctor": 4.7,
+    "dlRate": 0.83
+  },
+  {
+    "month": "May 2026",
+    "report": "Apartment REITs",
+    "sent_date": "May 2026",
+    "sent": 7065,
+    "opened": 2419,
+    "clicked": 86,
+    "hardBounced": 8,
+    "dlClicks": 64,
+    "category": "Rental Communities & SFR",
+    "openRate": 34.2,
+    "clickRate": 1.2,
+    "ctor": 3.6,
+    "dlRate": 0.91
+  },
+  {
+    "month": "May 2026",
+    "report": "SFR Market Fundamentals",
+    "sent_date": "May 2026",
+    "sent": 5879,
+    "opened": 1950,
+    "clicked": 93,
+    "hardBounced": 8,
+    "dlClicks": null,
+    "category": "Single-Family Rental",
+    "openRate": 33.2,
+    "clickRate": 1.6,
+    "ctor": 4.8,
+    "dlRate": null
+  },
+  {
+    "month": "May 2026",
+    "report": "BTR Survey",
+    "sent_date": "May 2026",
+    "sent": 7053,
+    "opened": 2337,
+    "clicked": 140,
+    "hardBounced": 11,
+    "dlClicks": 126,
+    "category": "Rental Communities & SFR",
+    "openRate": 33.1,
+    "clickRate": 2.0,
+    "ctor": 6.0,
+    "dlRate": 1.79
+  },
+  {
+    "month": "May 2026",
+    "report": "BP Quarterly",
+    "sent_date": "May 2026",
+    "sent": 3275,
+    "opened": 1043,
+    "clicked": 96,
+    "hardBounced": 7,
+    "dlClicks": 88,
+    "category": "Building Products",
+    "openRate": 31.8,
+    "clickRate": 2.9,
+    "ctor": 9.2,
+    "dlRate": 2.69
+  }
+];
+
+let openChart, clickChart, ctorChartObj, sentChartObj, categoryChartObj;
+
+const monthFilter = document.getElementById('monthFilter');
+const categoryFilter = document.getElementById('categoryFilter');
+const reportFilter = document.getElementById('reportFilter');
+
+function unique(arr) { return [...new Set(arr)].sort(); }
+function fmtNum(n) { return Number(n).toLocaleString(); }
+function fmtPct(n) { return Number(n).toFixed(1).replace(/\.0$/, '') + '%'; }
+
+function openRateColor(r) {
+  if (r >= 40) return '#1D9E75';
+  if (r >= 35) return '#5DCAA5';
+  if (r >= 30) return '#378ADD';
+  return '#EF9F27';
+}
+
+function ratingPill(rate) {
+  if (rate >= 40) return '<span class="pill pill-green">Strong</span>';
+  if (rate >= 35) return '<span class="pill pill-blue">Good</span>';
+  if (rate >= 30) return '<span class="pill pill-amber">Average</span>';
+  return '<span class="pill pill-red">Low</span>';
+}
+
+function fillSelect(el, values, allLabel) {
+  const current = el.value;
+  el.innerHTML = `<option value="${allLabel}">${allLabel}</option>`;
+  values.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v;
+    el.appendChild(o);
+  });
+  if ([...el.options].some(o => o.value === current)) el.value = current;
+}
+
+function populateFilters() {
+  fillSelect(monthFilter, unique(data.map(r => r.month)), 'All Months');
+  fillSelect(categoryFilter, unique(data.map(r => r.category)), 'All Categories');
+  updateReportFilter();
+}
+
+function updateReportFilter() {
+  const rows = data.filter(r =>
+    (monthFilter.value === 'All Months' || r.month === monthFilter.value) &&
+    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value)
+  );
+  fillSelect(reportFilter, unique(rows.map(r => r.report)), 'All Reports');
+}
+
+function filteredRows() {
+  return data.filter(r =>
+    (monthFilter.value === 'All Months' || r.month === monthFilter.value) &&
+    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value) &&
+    (reportFilter.value === 'All Reports' || r.report === reportFilter.value)
+  );
+}
+
+function summary(rows) {
+  const sent = rows.reduce((s,r)=>s+r.sent,0);
+  const opened = rows.reduce((s,r)=>s+r.opened,0);
+  const clicked = rows.reduce((s,r)=>s+r.clicked,0);
+  const dlClicks = rows.reduce((s,r)=>s+(r.dlClicks || 0),0);
+  return {
+    sent, opened, clicked, dlClicks,
+    openRate: sent ? opened/sent*100 : 0,
+    clickRate: sent ? clicked/sent*100 : 0,
+    ctor: opened ? clicked/opened*100 : 0,
+    dlRate: sent ? dlClicks/sent*100 : 0,
+    reports: rows.length
+  };
+}
+
+function categorySummary(rows) {
+  return unique(rows.map(r=>r.category)).map(cat => {
+    const group = rows.filter(r => r.category === cat);
+    return { category: cat, ...summary(group) };
+  }).sort((a,b)=>b.openRate-a.openRate);
+}
+
+function updateMetrics(rows) {
+  const s = summary(rows);
+  document.getElementById('m-sent').textContent = fmtNum(s.sent);
+  document.getElementById('m-open').textContent = fmtPct(s.openRate);
+  document.getElementById('m-click').textContent = fmtPct(s.clickRate);
+  document.getElementById('m-reports').textContent = fmtNum(s.reports);
+
+  const titleBits = [];
+  if (monthFilter.value !== 'All Months') titleBits.push(monthFilter.value);
+  if (categoryFilter.value !== 'All Categories') titleBits.push(categoryFilter.value);
+  if (reportFilter.value !== 'All Reports') titleBits.push(reportFilter.value);
+  document.getElementById('detailTitle').textContent = titleBits.length ? titleBits.join(' · ') : 'All data summary';
+
+  document.getElementById('detailGrid').innerHTML = `
+    <div class="detail-item"><span>Total sent</span><strong>${fmtNum(s.sent)}</strong></div>
+    <div class="detail-item"><span>Open rate</span><strong>${fmtPct(s.openRate)}</strong></div>
+    <div class="detail-item"><span>Click rate</span><strong>${fmtPct(s.clickRate)}</strong></div>
+    <div class="detail-item"><span>CTOR</span><strong>${fmtPct(s.ctor)}</strong></div>
+    <div class="detail-item"><span>Total opens</span><strong>${fmtNum(s.opened)}</strong></div>
+    <div class="detail-item"><span>Total clicks</span><strong>${fmtNum(s.clicked)}</strong></div>
+    <div class="detail-item"><span>PDF clicks</span><strong>${fmtNum(s.dlClicks)}</strong></div>
+    <div class="detail-item"><span>PDF rate</span><strong>${fmtPct(s.dlRate)}</strong></div>
+  `;
+}
+
+function makeOrUpdateChart(name, canvasId, config) {
+  if (window[name]) window[name].destroy();
+  window[name] = new Chart(document.getElementById(canvasId), config);
+}
+
+function updateCharts(rows) {
+  const sorted = [...rows].sort((a,b)=>b.openRate-a.openRate);
+  const labels = sorted.map(r => `${r.report} (${r.month.replace(' 2026','')})`);
+  const maxOpen = Math.max(55, ...sorted.map(r=>r.openRate));
+
+  makeOrUpdateChart('openChart', 'openRateChart', {
+    type:'bar',
+    data: { labels, datasets:[{ label:'Open rate %', data:sorted.map(r=>r.openRate), backgroundColor:sorted.map(r=>openRateColor(r.openRate)), borderWidth:0, borderRadius:4 }] },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,max:maxOpen,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
+  });
+
+  makeOrUpdateChart('clickChart', 'clickRateChart', {
+    type:'bar',
+    data: { labels, datasets:[{ label:'Click rate %', data:sorted.map(r=>r.clickRate), backgroundColor:'#378ADD', borderWidth:0, borderRadius:4 }] },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
+  });
+
+  makeOrUpdateChart('ctorChart', 'ctorChart', {
+    type:'bar',
+    data: { labels, datasets:[{ label:'CTOR %', data:sorted.map(r=>r.ctor), backgroundColor:'#7B5EA7', borderWidth:0, borderRadius:4 }] },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
+  });
+
+  const bySent = [...rows].sort((a,b)=>b.sent-a.sent);
+  makeOrUpdateChart('sentChart', 'sentChart', {
+    type:'bar',
+    data: { labels:bySent.map(r=>`${r.report} (${r.month.replace(' 2026','')})`), datasets:[{ label:'List size', data:bySent.map(r=>r.sent), backgroundColor:'#D3CFC6', borderWidth:0, borderRadius:4 }] },
+    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>Number(v).toLocaleString()},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
+  });
+
+  const cats = categorySummary(rows);
+  makeOrUpdateChart('categoryChart', 'categoryChart', {
+    type:'bar',
+    data: { labels:cats.map(c=>c.category), datasets:[{ label:'Open rate', data:cats.map(c=>Number(c.openRate.toFixed(1))), backgroundColor:'#5DCAA5', borderWidth:0, borderRadius:4 }, { label:'Click rate', data:cats.map(c=>Number(c.clickRate.toFixed(1))), backgroundColor:'#378ADD', borderWidth:0, borderRadius:4 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}} }
+  });
+}
+
+function updateTable(rows) {
+  const sorted = [...rows].sort((a,b)=>b.openRate-a.openRate);
+  const maxOpen = Math.max(...sorted.map(r=>r.openRate), 1);
+  document.getElementById('tableBody').innerHTML = sorted.map(r => `
+    <tr>
+      <td>${r.month}</td>
+      <td><strong>${r.report}</strong></td>
+      <td>${r.category}</td>
+      <td>${fmtNum(r.sent)}</td>
+      <td>
+        <div class="bar-cell">
+          <div class="mini-bar" style="width:${Math.round(r.openRate/maxOpen*120)}px;background:${openRateColor(r.openRate)}"></div>
+          <span>${fmtPct(r.openRate)}</span>
+          ${ratingPill(r.openRate)}
+        </div>
+      </td>
+      <td>${fmtPct(r.clickRate)}</td>
+      <td>${fmtPct(r.ctor)}</td>
+      <td>${r.dlRate !== null ? r.dlRate.toFixed(2)+'%' : '<span style="color:#aaa">—</span>'}</td>
+      <td>${fmtNum(r.opened)}</td>
+      <td>${fmtNum(r.clicked)}</td>
+      <td>${r.hardBounced > 0 ? '<span style="color:#993C1D">'+fmtNum(r.hardBounced)+'</span>' : '0'}</td>
+    </tr>
+  `).join('');
+}
+
+function updateDashboard() {
+  const rows = filteredRows();
+  updateMetrics(rows);
+  updateCharts(rows);
+  updateTable(rows);
+}
+
+monthFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
+categoryFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
+reportFilter.addEventListener('change', updateDashboard);
+
+populateFilters();
+monthFilter.value = 'May 2026';
+updateReportFilter();
+updateDashboard();
+</script>
+</body>
+</html>
