@@ -116,6 +116,7 @@
       <tr>
         <th>Month</th>
         <th>Report</th>
+        <th>Sent date</th>
         <th>Category</th>
         <th>Sent</th>
         <th>Open rate</th>
@@ -634,6 +635,21 @@ function unique(arr) { return [...new Set(arr)].sort(); }
 function fmtNum(n) { return Number(n).toLocaleString(); }
 function fmtPct(n) { return Number(n).toFixed(1).replace(/\.0$/, '') + '%'; }
 
+// Show the send date; if the row carries a specific day (e.g. "Apr 27, 2026"),
+// also show the weekday it went out. Month-only rows (e.g. "May 2026") show as-is.
+function fmtSentDate(raw, opts = {}) {
+  if (!raw) return '<span style="color:#aaa">—</span>';
+  const hasDay = /\d{1,2},/.test(raw);          // matches "27," in "Apr 27, 2026"
+  if (hasDay) {
+    const d = new Date(raw);
+    if (!isNaN(d)) {
+      const dow = d.toLocaleDateString('en-US', { weekday: opts.longDow ? 'long' : 'short' });
+      return `${raw} <span style="color:#888780">(${dow})</span>`;
+    }
+  }
+  return raw;
+}
+
 function openRateColor(r) {
   if (r >= 40) return '#1D9E75';
   if (r >= 35) return '#5DCAA5';
@@ -726,7 +742,9 @@ function updateMetrics(rows) {
   if (reportFilter.value !== 'All Reports') titleBits.push(reportFilter.value);
   document.getElementById('detailTitle').textContent = titleBits.length ? titleBits.join(' · ') : 'All data summary';
 
+  const oneRow = rows.length === 1 ? rows[0] : null;
   document.getElementById('detailGrid').innerHTML = `
+    ${oneRow ? `<div class="detail-item"><span>Sent date</span><strong style="font-size:16px">${fmtSentDate(oneRow.sent_date, {longDow:true})}</strong></div>` : ''}
     <div class="detail-item"><span>Total sent</span><strong>${fmtNum(s.sent)}</strong></div>
     <div class="detail-item"><span>Open rate</span><strong>${fmtPct(s.openRate)}</strong></div>
     ${singleReport ? `<div class="detail-item"><span>Click rate</span><strong>${fmtPct(s.clickRate)}</strong></div>` : ''}
@@ -788,6 +806,7 @@ function updateTable(rows) {
     <tr>
       <td>${r.month}</td>
       <td><strong>${r.report}</strong></td>
+      <td style="white-space:nowrap">${fmtSentDate(r.sent_date)}</td>
       <td>${r.category}</td>
       <td>${fmtNum(r.sent)}</td>
       <td>
