@@ -72,7 +72,7 @@
 <div class="metric-grid">
   <div class="metric-card"><div class="metric-label">Total sent</div><div class="metric-value" id="m-sent">—</div></div>
   <div class="metric-card"><div class="metric-label">Overall open rate</div><div class="metric-value" id="m-open">—</div></div>
-  <div class="metric-card"><div class="metric-label">Overall click rate</div><div class="metric-value" id="m-click">—</div></div>
+  <div class="metric-card" id="card-click"><div class="metric-label">Click rate</div><div class="metric-value" id="m-click">—</div></div>
   <div class="metric-card"><div class="metric-label">Reports shown</div><div class="metric-value" id="m-reports">—</div></div>
 </div>
 
@@ -94,6 +94,7 @@
   <div class="chart-card">
     <p class="section-label">Click-to-open rate by report <span style="font-weight:400;font-size:12px;">(of openers who clicked)</span></p>
     <div style="position:relative;width:100%;height:340px;"><canvas id="ctorChart"></canvas></div>
+    <p class="dl-note"><strong>Click-to-open rate = clicks ÷ opens</strong> — of the people who actually opened the email, what share clicked through.</p>
   </div>
 </div>
 
@@ -119,7 +120,7 @@
         <th>Sent</th>
         <th>Open rate</th>
         <th>Click rate</th>
-        <th>CTOR</th>
+        <th>Click-to-open rate</th>
         <th>Report download rate</th>
         <th>Opens</th>
         <th>Clicks</th>
@@ -708,10 +709,15 @@ function categorySummary(rows) {
 
 function updateMetrics(rows) {
   const s = summary(rows);
+  // Click rate (and the raw click count) are only shown when a single report is
+  // selected — an aggregate click rate blended across many reports isn't meaningful.
+  const singleReport = reportFilter.value !== 'All Reports';
+
   document.getElementById('m-sent').textContent = fmtNum(s.sent);
   document.getElementById('m-open').textContent = fmtPct(s.openRate);
   document.getElementById('m-click').textContent = fmtPct(s.clickRate);
   document.getElementById('m-reports').textContent = fmtNum(s.reports);
+  document.getElementById('card-click').style.display = singleReport ? '' : 'none';
 
   const titleBits = [];
   if (monthFilter.value !== 'All Months') titleBits.push(monthFilter.value);
@@ -720,14 +726,11 @@ function updateMetrics(rows) {
   if (reportFilter.value !== 'All Reports') titleBits.push(reportFilter.value);
   document.getElementById('detailTitle').textContent = titleBits.length ? titleBits.join(' · ') : 'All data summary';
 
-  // Raw click count ("click thru rate by number") is only meaningful for a single report,
-  // so it is shown only when one report is selected. The click-rate % is always shown.
-  const singleReport = reportFilter.value !== 'All Reports';
   document.getElementById('detailGrid').innerHTML = `
     <div class="detail-item"><span>Total sent</span><strong>${fmtNum(s.sent)}</strong></div>
     <div class="detail-item"><span>Open rate</span><strong>${fmtPct(s.openRate)}</strong></div>
-    <div class="detail-item"><span>Click rate</span><strong>${fmtPct(s.clickRate)}</strong></div>
-    <div class="detail-item"><span>CTOR</span><strong>${fmtPct(s.ctor)}</strong></div>
+    ${singleReport ? `<div class="detail-item"><span>Click rate</span><strong>${fmtPct(s.clickRate)}</strong></div>` : ''}
+    <div class="detail-item"><span>Click-to-open rate</span><strong>${fmtPct(s.ctor)}</strong></div>
     <div class="detail-item"><span>Total opens</span><strong>${fmtNum(s.opened)}</strong></div>
     ${singleReport ? `<div class="detail-item"><span>Total clicks</span><strong>${fmtNum(s.clicked)}</strong></div>` : ''}
     <div class="detail-item"><span>PDF clicks</span><strong>${fmtNum(s.dlClicks)}</strong></div>
