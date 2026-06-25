@@ -10,7 +10,7 @@
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; padding: 2rem; }
   h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
   .subtitle { font-size: 14px; color: #5f5e5a; margin-bottom: 1.5rem; }
-  .controls { display:grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap:12px; margin-bottom:1.5rem; }
+  .controls { display:grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap:12px; margin-bottom:1.5rem; }
   .control-card { background:#fff; border:0.5px solid rgba(0,0,0,0.1); border-radius:10px; padding:12px; }
   label { display:block; font-size:12px; color:#5f5e5a; margin-bottom:6px; font-weight:500; }
   select { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #d3d1c7; background:#fff; font-size:14px; }
@@ -54,6 +54,10 @@
   <div class="control-card">
     <label for="monthFilter">Month</label>
     <select id="monthFilter"></select>
+  </div>
+  <div class="control-card">
+    <label for="frequencyFilter">Frequency</label>
+    <select id="frequencyFilter"></select>
   </div>
   <div class="control-card">
     <label for="categoryFilter">Category</label>
@@ -583,9 +587,45 @@ const data = [
   }
 ];
 
-let openChart, clickChart, ctorChartObj, sentChartObj, categoryChartObj;
+// Canonical display name + reporting cadence for each report key found in the data.
+// Names are expanded to be as specific as possible; frequency drives the Monthly/Quarterly filter.
+const REPORT_META = {
+  "NHTI Insights":            { name: "NHTI - Survey Insights Report", frequency: "Monthly" },
+  "RAF":                      { name: "RAF", frequency: "Monthly" },
+  "RCAF Market Fundamentals": { name: "RCAF Market Fundamentals", frequency: "Monthly" },
+  "RCAF Quarterly":           { name: "RCAF Quarterly", frequency: "Quarterly" },
+  "Real Estate Agent Survey": { name: "Real Estate Agent Survey", frequency: "Monthly" },
+  "SFR Market Fundamentals":  { name: "SFR Market Fundamentals", frequency: "Monthly" },
+  "USHAF":                    { name: "USHAF", frequency: "Monthly" },
+  "USRI":                     { name: "USRI", frequency: "Quarterly" },
+  "BADI":                     { name: "Apartment Developer and Investor Survey (BADI)", frequency: "Quarterly" },
+  "BP Dealer Survey":         { name: "BP Dealer Survey", frequency: "Monthly" },
+  "HBAF":                     { name: "HBAF", frequency: "Quarterly" },
+  "Homebuilder Survey First Glance": { name: "Homebuilder Survey First Glance", frequency: "Monthly" },
+  "Homebuilder Survey":       { name: "Homebuilder Survey", frequency: "Monthly" },
+  "KBMI":                     { name: "KBMI", frequency: "Quarterly" },
+  "Land Survey":              { name: "Land Survey", frequency: "Quarterly" },
+  "USCRAI":                   { name: "US Custom Residential Architecture Index (USCRAI)", frequency: "Quarterly" },
+  "Fix and Flip Survey":      { name: "Fix and Flip Survey", frequency: "Quarterly" },
+  "SFR REITs":                { name: "SFR REIT Earnings", frequency: "Quarterly" },
+  "Apartment REITs":          { name: "Apartment REIT Earnings Summary", frequency: "Quarterly" },
+  "BTR Survey":               { name: "BTR Developer, Operator, and Investor Survey (BTR Survey)", frequency: "Quarterly" },
+  "BP Quarterly":             { name: "Building Products Analysis and Forecast (BP Quarterly)", frequency: "Quarterly" }
+};
+
+data.forEach(r => {
+  const meta = REPORT_META[r.report];
+  if (meta) { r.report = meta.name; r.frequency = meta.frequency; }
+  else { r.frequency = "Unknown"; }
+});
+
+// Chart instances live in a dedicated registry (NOT on window): names like "ctorChart"
+// collide with the canvas element ids, and window[id] resolves to the <canvas> element,
+// so destroy() would be called on a DOM node on first render.
+const charts = {};
 
 const monthFilter = document.getElementById('monthFilter');
+const frequencyFilter = document.getElementById('frequencyFilter');
 const categoryFilter = document.getElementById('categoryFilter');
 const reportFilter = document.getElementById('reportFilter');
 
@@ -621,22 +661,25 @@ function fillSelect(el, values, allLabel) {
 
 function populateFilters() {
   fillSelect(monthFilter, unique(data.map(r => r.month)), 'All Months');
+  fillSelect(frequencyFilter, unique(data.map(r => r.frequency)), 'All Frequencies');
   fillSelect(categoryFilter, unique(data.map(r => r.category)), 'All Categories');
   updateReportFilter();
 }
 
+function matchesBaseFilters(r) {
+  return (monthFilter.value === 'All Months' || r.month === monthFilter.value) &&
+    (frequencyFilter.value === 'All Frequencies' || r.frequency === frequencyFilter.value) &&
+    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value);
+}
+
 function updateReportFilter() {
-  const rows = data.filter(r =>
-    (monthFilter.value === 'All Months' || r.month === monthFilter.value) &&
-    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value)
-  );
+  const rows = data.filter(matchesBaseFilters);
   fillSelect(reportFilter, unique(rows.map(r => r.report)), 'All Reports');
 }
 
 function filteredRows() {
   return data.filter(r =>
-    (monthFilter.value === 'All Months' || r.month === monthFilter.value) &&
-    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value) &&
+    matchesBaseFilters(r) &&
     (reportFilter.value === 'All Reports' || r.report === reportFilter.value)
   );
 }
@@ -672,25 +715,29 @@ function updateMetrics(rows) {
 
   const titleBits = [];
   if (monthFilter.value !== 'All Months') titleBits.push(monthFilter.value);
+  if (frequencyFilter.value !== 'All Frequencies') titleBits.push(frequencyFilter.value);
   if (categoryFilter.value !== 'All Categories') titleBits.push(categoryFilter.value);
   if (reportFilter.value !== 'All Reports') titleBits.push(reportFilter.value);
   document.getElementById('detailTitle').textContent = titleBits.length ? titleBits.join(' · ') : 'All data summary';
 
+  // Raw click count ("click thru rate by number") is only meaningful for a single report,
+  // so it is shown only when one report is selected. The click-rate % is always shown.
+  const singleReport = reportFilter.value !== 'All Reports';
   document.getElementById('detailGrid').innerHTML = `
     <div class="detail-item"><span>Total sent</span><strong>${fmtNum(s.sent)}</strong></div>
     <div class="detail-item"><span>Open rate</span><strong>${fmtPct(s.openRate)}</strong></div>
     <div class="detail-item"><span>Click rate</span><strong>${fmtPct(s.clickRate)}</strong></div>
     <div class="detail-item"><span>CTOR</span><strong>${fmtPct(s.ctor)}</strong></div>
     <div class="detail-item"><span>Total opens</span><strong>${fmtNum(s.opened)}</strong></div>
-    <div class="detail-item"><span>Total clicks</span><strong>${fmtNum(s.clicked)}</strong></div>
+    ${singleReport ? `<div class="detail-item"><span>Total clicks</span><strong>${fmtNum(s.clicked)}</strong></div>` : ''}
     <div class="detail-item"><span>PDF clicks</span><strong>${fmtNum(s.dlClicks)}</strong></div>
     <div class="detail-item"><span>PDF rate</span><strong>${fmtPct(s.dlRate)}</strong></div>
   `;
 }
 
 function makeOrUpdateChart(name, canvasId, config) {
-  if (window[name]) window[name].destroy();
-  window[name] = new Chart(document.getElementById(canvasId), config);
+  if (charts[name]) charts[name].destroy();
+  charts[name] = new Chart(document.getElementById(canvasId), config);
 }
 
 function updateCharts(rows) {
@@ -765,6 +812,7 @@ function updateDashboard() {
 }
 
 monthFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
+frequencyFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
 categoryFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
 reportFilter.addEventListener('change', updateDashboard);
 
