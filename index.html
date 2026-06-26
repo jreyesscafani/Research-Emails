@@ -10,7 +10,7 @@
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; padding: 2rem; }
   h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
   .subtitle { font-size: 14px; color: #5f5e5a; margin-bottom: 1.5rem; }
-  .controls { display:grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap:12px; margin-bottom:1.5rem; }
+  .controls { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:1.5rem; }
   .control-card { background:#fff; border:0.5px solid rgba(0,0,0,0.1); border-radius:10px; padding:12px; }
   label { display:block; font-size:12px; color:#5f5e5a; margin-bottom:6px; font-weight:500; }
   select { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #d3d1c7; background:#fff; font-size:14px; }
@@ -62,6 +62,10 @@
   <div class="control-card">
     <label for="categoryFilter">Category</label>
     <select id="categoryFilter"></select>
+  </div>
+  <div class="control-card">
+    <label for="reportTypeFilter">Report type</label>
+    <select id="reportTypeFilter"></select>
   </div>
   <div class="control-card">
     <label for="reportFilter">Report</label>
@@ -123,6 +127,7 @@
 
 <div class="chart-card">
   <p class="section-label">Full breakdown</p>
+  <div style="overflow-x:auto;">
   <table class="email-table" id="emailTable">
     <thead>
       <tr>
@@ -130,6 +135,7 @@
         <th>Report</th>
         <th>Sent date</th>
         <th>Category</th>
+        <th>Report type</th>
         <th>Sent</th>
         <th>Open rate</th>
         <th>Click rate</th>
@@ -142,6 +148,7 @@
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
+  </div>
   <p class="dl-note">* Report download rate = clicks on the portal.jbrec.com report PDF link ÷ total sent. “—” indicates data not available for that report/month.</p>
   <p class="dl-note" id="tableAggNote"></p>
 </div>
@@ -607,36 +614,47 @@ const data = [
   }
 ];
 
-// Canonical display name + reporting cadence for each report key found in the data.
-// Names are expanded to be as specific as possible; frequency drives the Monthly/Quarterly filter.
+// Canonical metadata for each report key found in the source data:
+// full display name, short name, reporting cadence, subscription category, report type.
 const REPORT_META = {
-  "NHTI Insights":            { name: "NHTI - Survey Insights Report", frequency: "Monthly" },
-  "RAF":                      { name: "RAF", frequency: "Monthly" },
-  "RCAF Market Fundamentals": { name: "RCAF Market Fundamentals", frequency: "Monthly" },
-  "RCAF Quarterly":           { name: "RCAF Quarterly", frequency: "Quarterly" },
-  "Real Estate Agent Survey": { name: "Real Estate Agent Survey", frequency: "Monthly" },
-  "SFR Market Fundamentals":  { name: "SFR Market Fundamentals", frequency: "Monthly" },
-  "USHAF":                    { name: "USHAF", frequency: "Monthly" },
-  "USRI":                     { name: "USRI", frequency: "Quarterly" },
-  "BADI":                     { name: "Apartment Developer and Investor Survey (BADI)", frequency: "Quarterly" },
-  "BP Dealer Survey":         { name: "BP Dealer Survey", frequency: "Monthly" },
-  "HBAF":                     { name: "HBAF", frequency: "Quarterly" },
-  "Homebuilder Survey First Glance": { name: "Homebuilder Survey First Glance", frequency: "Monthly" },
-  "Homebuilder Survey":       { name: "Homebuilder Survey", frequency: "Monthly" },
-  "KBMI":                     { name: "KBMI", frequency: "Quarterly" },
-  "Land Survey":              { name: "Land Survey", frequency: "Quarterly" },
-  "USCRAI":                   { name: "US Custom Residential Architecture Index (USCRAI)", frequency: "Quarterly" },
-  "Fix and Flip Survey":      { name: "Fix and Flip Survey", frequency: "Quarterly" },
-  "SFR REITs":                { name: "SFR REIT Earnings", frequency: "Quarterly" },
-  "Apartment REITs":          { name: "Apartment REIT Earnings Summary", frequency: "Quarterly" },
-  "BTR Survey":               { name: "BTR Developer, Operator, and Investor Survey (BTR Survey)", frequency: "Quarterly" },
-  "BP Quarterly":             { name: "Building Products Analysis and Forecast (BP Quarterly)", frequency: "Quarterly" }
+  "NHTI Insights":            { name: "Survey Insights Report", short: "Survey Insights Report", frequency: "Monthly", category: "NHTI", reportType: "NHTI Report" },
+  "RAF":                      { name: "Regional Analysis and Forecast", short: "RAF", frequency: "Monthly", category: "For-Sale", reportType: "Analysis and Forecast" },
+  "RCAF Market Fundamentals": { name: "Rental Communities Market Fundamentals", short: "RCAF Fundamentals", frequency: "Monthly", category: "Rental Communities & SFR", reportType: "Analysis and Forecast" },
+  "RCAF Quarterly":           { name: "Rental Communities Analysis and Forecast", short: "RCAF Fundamentals", frequency: "Quarterly", category: "Rental Communities & SFR", reportType: "Analysis and Forecast" },
+  "Real Estate Agent Survey": { name: "Real Estate Agent Survey", short: "REAS", frequency: "Monthly", category: "For-Sale", reportType: "Survey" },
+  "SFR Market Fundamentals":  { name: "SFR Market Fundamentals", short: "SFR Fundamentals", frequency: "Monthly", category: "Single-Family Rental", reportType: "Analysis and Forecast" },
+  "USHAF":                    { name: "US Housing Analysis and Forecast", short: "USHAF", frequency: "Monthly", category: "Macro", reportType: "Analysis and Forecast" },
+  "USRI":                     { name: "US Remodeler Survey", short: "USRI", frequency: "Quarterly", category: "Building Products", reportType: "Survey" },
+  "BADI":                     { name: "Apartment Developer and Investor Survey", short: "Apartment Developer and Investor Survey", frequency: "Quarterly", category: "Rental Communities & SFR", reportType: "Survey" },
+  "BP Dealer Survey":         { name: "Building Products Dealer Survey", short: "BP Dealer Survey", frequency: "Monthly", category: "Building Products", reportType: "Survey" },
+  "HBAF":                     { name: "Homebuilder Analysis and Forecast", short: "HBAF", frequency: "Quarterly", category: "For-Sale", reportType: "Analysis and Forecast" },
+  "Homebuilder Survey First Glance": { name: "Homebuilder Survey First Glance", short: "Homebuilder Survey First Glance", frequency: "Monthly", category: "For-Sale", reportType: "Survey" },
+  "Homebuilder Survey":       { name: "Homebuilder Survey", short: "Homebuilder Survey", frequency: "Monthly", category: "For-Sale", reportType: "Survey" },
+  "KBMI":                     { name: "Kitchen & Bath Market Index", short: "KBMI", frequency: "Quarterly", category: "Building Products", reportType: "Survey" },
+  "Land Survey":              { name: "Residential Land Survey", short: "Residential Land Survey", frequency: "Quarterly", category: "For-Sale", reportType: "Survey" },
+  "USCRAI":                   { name: "US Custom Residential Architecture Index", short: "US Custom Residential Architecture Index", frequency: "Quarterly", category: "NHTI", reportType: "NHTI Report" },
+  "Fix and Flip Survey":      { name: "Fix and Flip Survey", short: "Fix and Flip", frequency: "Quarterly", category: "For-Sale", reportType: "Survey" },
+  "SFR REITs":                { name: "Summary of Public Single-Family Rental REIT Quarterly Earnings Calls", short: "SFR REIT Earnings", frequency: "Quarterly", category: "Single-Family Rental", reportType: "Earnings Summary" },
+  "Apartment REITs":          { name: "Apartment REIT Earnings Summary", short: "Apartment REIT Earnings Summary", frequency: "Quarterly", category: "Rental Communities & SFR", reportType: "Earnings Summary" },
+  "BTR Survey":               { name: "Build-to-Rent Developer, Operator, and Investor Survey", short: "BTR Survey", frequency: "Quarterly", category: "Rental Communities & SFR", reportType: "Survey" },
+  "BP Quarterly":             { name: "Building Products Analysis and Forecast", short: "BP Quarterly", frequency: "Quarterly", category: "Building Products", reportType: "Analysis and Forecast" },
+  // Any report named "Fear and Greed" is renamed to the CRE Capital Markets Survey.
+  "Fear and Greed":           { name: "CRE Capital Markets Survey (Commercial Real Estate)", short: "CRE Capital Markets Survey (Commercial Real Estate)", frequency: "Quarterly", category: "Macro", reportType: "Survey" }
 };
 
 data.forEach(r => {
   const meta = REPORT_META[r.report];
-  if (meta) { r.report = meta.name; r.frequency = meta.frequency; }
-  else { r.frequency = "Unknown"; }
+  if (meta) {
+    r.report = meta.name;
+    r.short = meta.short;
+    r.frequency = meta.frequency;
+    r.category = meta.category;
+    r.reportType = meta.reportType;
+  } else {
+    r.short = r.report;
+    r.frequency = r.frequency || "Unknown";
+    r.reportType = "Unknown";
+  }
 });
 
 // Chart instances live in a dedicated registry (NOT on window): names like "ctorChart"
@@ -647,6 +665,7 @@ const charts = {};
 const monthFilter = document.getElementById('monthFilter');
 const frequencyFilter = document.getElementById('frequencyFilter');
 const categoryFilter = document.getElementById('categoryFilter');
+const reportTypeFilter = document.getElementById('reportTypeFilter');
 const reportFilter = document.getElementById('reportFilter');
 
 function unique(arr) { return [...new Set(arr)].sort(); }
@@ -683,6 +702,7 @@ function bestDaySummary() {
   const rows = data.filter(r =>
     (frequencyFilter.value === 'All Frequencies' || r.frequency === frequencyFilter.value) &&
     (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value) &&
+    (reportTypeFilter.value === 'All Types' || r.reportType === reportTypeFilter.value) &&
     (reportFilter.value === 'All Reports' || r.report === reportFilter.value) &&
     weekdayOf(r.sent_date)
   );
@@ -736,13 +756,15 @@ function populateFilters() {
   fillSelect(monthFilter, unique(data.map(r => r.month)), 'All Months');
   fillSelect(frequencyFilter, unique(data.map(r => r.frequency)), 'All Frequencies');
   fillSelect(categoryFilter, unique(data.map(r => r.category)), 'All Categories');
+  fillSelect(reportTypeFilter, unique(data.map(r => r.reportType)), 'All Types');
   updateReportFilter();
 }
 
 function matchesBaseFilters(r) {
   return (monthFilter.value === 'All Months' || r.month === monthFilter.value) &&
     (frequencyFilter.value === 'All Frequencies' || r.frequency === frequencyFilter.value) &&
-    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value);
+    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value) &&
+    (reportTypeFilter.value === 'All Types' || r.reportType === reportTypeFilter.value);
 }
 
 function updateReportFilter() {
@@ -795,6 +817,7 @@ function updateMetrics(rows) {
   if (monthFilter.value !== 'All Months') titleBits.push(monthFilter.value);
   if (frequencyFilter.value !== 'All Frequencies') titleBits.push(frequencyFilter.value);
   if (categoryFilter.value !== 'All Categories') titleBits.push(categoryFilter.value);
+  if (reportTypeFilter.value !== 'All Types') titleBits.push(reportTypeFilter.value);
   if (reportFilter.value !== 'All Reports') titleBits.push(reportFilter.value);
   document.getElementById('detailTitle').textContent = titleBits.length ? titleBits.join(' · ') : 'All data summary';
 
@@ -834,8 +857,8 @@ function chartRows(rows) {
     const dlSent = dlMonths.reduce((a,r)=>a+r.sent,0);
     const dlClicksTot = dlMonths.reduce((a,r)=>a+r.dlClicks,0);
     return {
-      report: rep, month: 'All Months', sent_date: null,
-      category: g[0].category, frequency: g[0].frequency,
+      report: rep, short: g[0].short, month: 'All Months', sent_date: null,
+      category: g[0].category, frequency: g[0].frequency, reportType: g[0].reportType,
       // counts shown as per-send averages so rates stay = avg opens / avg sent
       sent: Math.round(s.sent / n),
       opened: Math.round(s.opened / n),
@@ -935,6 +958,7 @@ function updateTable(rows) {
       <td><strong>${r.report}</strong></td>
       <td style="white-space:nowrap">${fmtSentDate(r.sent_date)}</td>
       <td>${r.category}</td>
+      <td>${r.reportType}</td>
       <td>${fmtNum(r.sent)}</td>
       <td>
         <div class="bar-cell">
@@ -963,6 +987,7 @@ function updateDashboard() {
 monthFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
 frequencyFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
 categoryFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
+reportTypeFilter.addEventListener('change', () => { updateReportFilter(); updateDashboard(); });
 reportFilter.addEventListener('change', updateDashboard);
 
 populateFilters();
