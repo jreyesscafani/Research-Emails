@@ -82,17 +82,17 @@
 </div>
 
 <div class="chart-card">
-  <p class="section-label">Open rate by report</p>
+  <p class="section-label">Open rate by report<span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
   <div style="position:relative;width:100%;height:380px;"><canvas id="openRateChart"></canvas></div>
 </div>
 
 <div class="two-col">
   <div class="chart-card">
-    <p class="section-label">Click rate by report</p>
+    <p class="section-label">Click rate by report<span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
     <div style="position:relative;width:100%;height:340px;"><canvas id="clickRateChart"></canvas></div>
   </div>
   <div class="chart-card">
-    <p class="section-label">Click-to-open rate by report <span style="font-weight:400;font-size:12px;">(of openers who clicked)</span></p>
+    <p class="section-label">Click-to-open rate by report <span style="font-weight:400;font-size:12px;">(of openers who clicked)</span><span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
     <div style="position:relative;width:100%;height:340px;"><canvas id="ctorChart"></canvas></div>
     <p class="dl-note"><strong>Click-to-open rate = clicks ÷ opens</strong> — of the people who actually opened the email, what share clicked through.</p>
   </div>
@@ -100,7 +100,7 @@
 
 <div class="two-col">
   <div class="chart-card">
-    <p class="section-label">List size by report</p>
+    <p class="section-label">List size by report<span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
     <div style="position:relative;width:100%;height:320px;"><canvas id="sentChart"></canvas></div>
   </div>
   <div class="chart-card">
@@ -816,9 +816,38 @@ function makeOrUpdateChart(name, canvasId, config) {
   charts[name] = new Chart(document.getElementById(canvasId), config);
 }
 
+// When no month is selected ("All Months"), collapse each report's multiple
+// monthly rows into a single row showing its average across months (rates are
+// weighted by volume; list size is the average per send). With a specific month
+// selected there is only one row per report, so rows pass through unchanged.
+function chartRows(rows) {
+  if (monthFilter.value !== 'All Months') return rows;
+  const byReport = {};
+  rows.forEach(r => { (byReport[r.report] = byReport[r.report] || []).push(r); });
+  return Object.keys(byReport).map(rep => {
+    const g = byReport[rep];
+    const s = summary(g);
+    return {
+      report: rep, month: 'All Months', category: g[0].category, frequency: g[0].frequency,
+      sent: Math.round(s.sent / g.length),
+      opened: s.opened, clicked: s.clicked,
+      openRate: s.openRate, clickRate: s.clickRate, ctor: s.ctor, dlRate: s.dlRate,
+      months: g.length
+    };
+  });
+}
+
+// Bar label: report name alone when averaging across months, else report (month).
+function rowLabel(r) {
+  return monthFilter.value === 'All Months' ? r.report : `${r.report} (${r.month.replace(' 2026','')})`;
+}
+
 function updateCharts(rows) {
-  const sorted = [...rows].sort((a,b)=>b.openRate-a.openRate);
-  const labels = sorted.map(r => `${r.report} (${r.month.replace(' 2026','')})`);
+  const crows = chartRows(rows);
+  const aggregating = monthFilter.value === 'All Months';
+  document.querySelectorAll('.agg-note').forEach(el => el.textContent = aggregating ? ' · avg across months' : '');
+  const sorted = [...crows].sort((a,b)=>b.openRate-a.openRate);
+  const labels = sorted.map(rowLabel);
   const maxOpen = Math.max(55, ...sorted.map(r=>r.openRate));
 
   makeOrUpdateChart('openChart', 'openRateChart', {
@@ -839,10 +868,10 @@ function updateCharts(rows) {
     options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
   });
 
-  const bySent = [...rows].sort((a,b)=>b.sent-a.sent);
+  const bySent = [...crows].sort((a,b)=>b.sent-a.sent);
   makeOrUpdateChart('sentChart', 'sentChart', {
     type:'bar',
-    data: { labels:bySent.map(r=>`${r.report} (${r.month.replace(' 2026','')})`), datasets:[{ label:'List size', data:bySent.map(r=>r.sent), backgroundColor:'#D3CFC6', borderWidth:0, borderRadius:4 }] },
+    data: { labels:bySent.map(rowLabel), datasets:[{ label:'List size', data:bySent.map(r=>r.sent), backgroundColor:'#D3CFC6', borderWidth:0, borderRadius:4 }] },
     options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>Number(v).toLocaleString()},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
   });
 
