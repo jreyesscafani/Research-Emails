@@ -143,6 +143,7 @@
     <tbody id="tableBody"></tbody>
   </table>
   <p class="dl-note">* Report download rate = clicks on the portal.jbrec.com report PDF link ÷ total sent. “—” indicates data not available for that report/month.</p>
+  <p class="dl-note" id="tableAggNote"></p>
 </div>
 
 <div class="chart-card">
@@ -827,12 +828,23 @@ function chartRows(rows) {
   return Object.keys(byReport).map(rep => {
     const g = byReport[rep];
     const s = summary(g);
+    const n = g.length;
+    // PDF-download rate only over months that actually have download tracking.
+    const dlMonths = g.filter(r => r.dlClicks != null);
+    const dlSent = dlMonths.reduce((a,r)=>a+r.sent,0);
+    const dlClicksTot = dlMonths.reduce((a,r)=>a+r.dlClicks,0);
     return {
-      report: rep, month: 'All Months', category: g[0].category, frequency: g[0].frequency,
-      sent: Math.round(s.sent / g.length),
-      opened: s.opened, clicked: s.clicked,
-      openRate: s.openRate, clickRate: s.clickRate, ctor: s.ctor, dlRate: s.dlRate,
-      months: g.length
+      report: rep, month: 'All Months', sent_date: null,
+      category: g[0].category, frequency: g[0].frequency,
+      // counts shown as per-send averages so rates stay = avg opens / avg sent
+      sent: Math.round(s.sent / n),
+      opened: Math.round(s.opened / n),
+      clicked: Math.round(s.clicked / n),
+      hardBounced: Math.round(g.reduce((a,r)=>a+r.hardBounced,0) / n),
+      dlClicks: dlMonths.length ? Math.round(dlClicksTot / dlMonths.length) : null,
+      openRate: s.openRate, clickRate: s.clickRate, ctor: s.ctor,
+      dlRate: dlSent ? dlClicksTot/dlSent*100 : null,
+      months: n
     };
   });
 }
@@ -911,11 +923,15 @@ function updateCharts(rows) {
 }
 
 function updateTable(rows) {
-  const sorted = [...rows].sort((a,b)=>b.openRate-a.openRate);
+  const aggregating = monthFilter.value === 'All Months';
+  const sorted = [...chartRows(rows)].sort((a,b)=>b.openRate-a.openRate);
   const maxOpen = Math.max(...sorted.map(r=>r.openRate), 1);
+  document.getElementById('tableAggNote').textContent = aggregating
+    ? 'Showing one row per report, averaged across months: counts are per-send averages and rates are volume-weighted.'
+    : '';
   document.getElementById('tableBody').innerHTML = sorted.map(r => `
     <tr>
-      <td>${r.month}</td>
+      <td>${aggregating ? `Avg · ${r.months} mo` : r.month}</td>
       <td><strong>${r.report}</strong></td>
       <td style="white-space:nowrap">${fmtSentDate(r.sent_date)}</td>
       <td>${r.category}</td>
