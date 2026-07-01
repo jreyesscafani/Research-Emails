@@ -819,19 +819,20 @@ function updateMetrics(rows) {
   if (categoryFilter.value !== 'All Categories') titleBits.push(categoryFilter.value);
   if (reportTypeFilter.value !== 'All Types') titleBits.push(reportTypeFilter.value);
   if (reportFilter.value !== 'All Reports') titleBits.push(reportFilter.value);
-  document.getElementById('detailTitle').textContent = titleBits.length ? titleBits.join(' · ') : 'All data summary';
+  document.getElementById('detailTitle').innerHTML = (titleBits.length ? titleBits.join(' · ') : 'All data summary') +
+    ' <span style="font-weight:400;font-size:12px;color:#888780;">(Open rate = opens ÷ sent · Click-to-open rate = clicks ÷ opens · PDF rate = PDF clicks ÷ total sent)</span>';
 
   const oneRow = rows.length === 1 ? rows[0] : null;
   document.getElementById('detailGrid').innerHTML = `
     ${oneRow ? `<div class="detail-item"><span>Sent date</span><strong style="font-size:16px">${fmtSentDate(oneRow.sent_date, {longDow:true})}</strong></div>` : ''}
     <div class="detail-item"><span>Total sent</span><strong>${fmtNum(s.sent)}</strong></div>
-    <div class="detail-item"><span>Open rate (opens ÷ sent)</span><strong>${fmtPct(s.openRate)}</strong></div>
+    <div class="detail-item"><span>Open rate</span><strong>${fmtPct(s.openRate)}</strong></div>
     ${singleReport ? `<div class="detail-item"><span>Click rate</span><strong>${fmtPct(s.clickRate)}</strong></div>` : ''}
-    <div class="detail-item"><span>Click-to-open rate (clicks ÷ opens)</span><strong>${fmtPct(s.ctor)}</strong></div>
+    <div class="detail-item"><span>Click-to-open rate</span><strong>${fmtPct(s.ctor)}</strong></div>
     <div class="detail-item"><span>Total opens</span><strong>${fmtNum(s.opened)}</strong></div>
     ${singleReport ? `<div class="detail-item"><span>Total clicks</span><strong>${fmtNum(s.clicked)}</strong></div>` : ''}
     <div class="detail-item"><span>PDF clicks</span><strong>${fmtNum(s.dlClicks)}</strong></div>
-    <div class="detail-item"><span>PDF rate (PDF clicks ÷ total sent)</span><strong>${fmtPct(s.dlRate)}</strong></div>
+    <div class="detail-item"><span>PDF rate</span><strong>${fmtPct(s.dlRate)}</strong></div>
   `;
 }
 
