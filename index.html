@@ -101,15 +101,9 @@
   </div>
 </div>
 
-<div class="two-col">
-  <div class="chart-card">
-    <p class="section-label">List size by report<span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
-    <div style="position:relative;width:100%;height:320px;"><canvas id="sentChart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <p class="section-label">Category summary</p>
-    <div style="position:relative;width:100%;height:320px;"><canvas id="categoryChart"></canvas></div>
-  </div>
+<div class="chart-card">
+  <p class="section-label">Category summary</p>
+  <div style="position:relative;width:100%;height:320px;"><canvas id="categoryChart"></canvas></div>
 </div>
 
 <div class="chart-card" id="bestDayCard">
@@ -1299,9 +1293,18 @@ function rowLabel(r) {
 }
 
 function updateCharts(rows) {
-  const crows = chartRows(rows);
+  // The open/click/CTOR-by-report charts always compare every report (they ignore
+  // the Report filter, which would otherwise leave them showing a single bar) —
+  // they still respect the Month/Frequency/Category/Report type filters.
+  const compareRows = data.filter(matchesBaseFilters);
+  const crows = chartRows(compareRows);
   const aggregating = monthFilter.value === 'All Months';
-  document.querySelectorAll('.agg-note').forEach(el => el.textContent = aggregating ? ' · avg across months' : '');
+  const singleReport = reportFilter.value !== 'All Reports';
+  const aggNote = [
+    aggregating ? 'avg across months' : '',
+    singleReport ? 'showing all reports' : ''
+  ].filter(Boolean).join(' · ');
+  document.querySelectorAll('.agg-note').forEach(el => el.textContent = aggNote ? ' · ' + aggNote : '');
   const sorted = [...crows].sort((a,b)=>b.openRate-a.openRate);
   const labels = sorted.map(rowLabel);
   const maxOpen = Math.max(55, ...sorted.map(r=>r.openRate));
@@ -1322,13 +1325,6 @@ function updateCharts(rows) {
     type:'bar',
     data: { labels, datasets:[{ label:'CTOR %', data:sorted.map(r=>r.ctor), backgroundColor:'#7B5EA7', borderWidth:0, borderRadius:4 }] },
     options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
-  });
-
-  const bySent = [...crows].sort((a,b)=>b.sent-a.sent);
-  makeOrUpdateChart('sentChart', 'sentChart', {
-    type:'bar',
-    data: { labels:bySent.map(rowLabel), datasets:[{ label:'List size', data:bySent.map(r=>r.sent), backgroundColor:'#D3CFC6', borderWidth:0, borderRadius:4 }] },
-    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>Number(v).toLocaleString()},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
   });
 
   const cats = categorySummary(rows);
