@@ -83,6 +83,7 @@
 <div class="chart-card" id="detailCard">
   <p class="section-label" id="detailTitle">Selected view summary</p>
   <div class="detail-grid" id="detailGrid"></div>
+  <p class="dl-note">Open rate = opens ÷ sent. <strong>Click-to-open rate = clicks ÷ opens</strong> — of the people who actually opened the email, what share clicked through. <strong>PDF rate = clicks on the portal.jbrec.com report PDF link ÷ total sent</strong> (shown as "Report download rate" in the table below).</p>
 </div>
 
 <div class="chart-card">
@@ -98,7 +99,6 @@
   <div class="chart-card">
     <p class="section-label">Click-to-open rate by report <span style="font-weight:400;font-size:12px;">(of openers who clicked)</span><span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
     <div style="position:relative;width:100%;height:340px;"><canvas id="ctorChart"></canvas></div>
-    <p class="dl-note"><strong>Click-to-open rate = clicks ÷ opens</strong> — of the people who actually opened the email, what share clicked through.</p>
   </div>
 </div>
 
@@ -111,6 +111,12 @@
     <p class="section-label">Category summary</p>
     <div style="position:relative;width:100%;height:320px;"><canvas id="categoryChart"></canvas></div>
   </div>
+</div>
+
+<div class="chart-card" id="bestDayCard">
+  <p class="section-label">Best day of week to send <span style="font-weight:400;font-size:12px;">(open rate by weekday the email was sent · label shows # of sends)</span></p>
+  <div style="position:relative;width:100%;height:300px;"><canvas id="bestDayChart"></canvas></div>
+  <p class="dl-note">Based only on emails with a known send date (currently April). Ignores the Month filter so the weekday pattern stays visible. Small samples per weekday — treat as directional, not conclusive.</p>
 </div>
 
 <div class="chart-card" id="engagementCard" style="display:none;">
@@ -143,7 +149,8 @@
     <tbody id="tableBody"></tbody>
   </table>
   </div>
-  <p class="dl-note">* Report download rate = clicks on the portal.jbrec.com report PDF link ÷ total sent. “—” indicates data not available for that report/month.</p>
+  <p class="dl-note">* “Report download rate” is the same as “PDF rate” above. “—” indicates data not available for that report/month.</p>
+  <p class="dl-note">Open rate rating (of send, not industry benchmark): <span class="pill pill-green">Strong</span> ≥40% · <span class="pill pill-blue">Good</span> 35–39.9% · <span class="pill pill-amber">Average</span> 30–34.9% · <span class="pill pill-red">Low</span> &lt;30%.</p>
   <p class="dl-note" id="tableAggNote"></p>
 </div>
 
@@ -681,6 +688,35 @@ function fmtSentDate(raw, opts = {}) {
   return raw;
 }
 
+// Short weekday name for rows that carry a specific send date, else null.
+const WEEK_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function weekdayOf(raw) {
+  if (!raw || !/\d{1,2},/.test(raw)) return null;
+  const d = new Date(raw);
+  return isNaN(d) ? null : d.toLocaleDateString('en-US', { weekday: 'short' });
+}
+
+// Open rate aggregated by the weekday a report was sent. Respects every filter
+// EXCEPT month (so the weekday pattern doesn't vanish when one month is picked),
+// and only counts rows with a known send date.
+function bestDaySummary() {
+  const rows = data.filter(r =>
+    (frequencyFilter.value === 'All Frequencies' || r.frequency === frequencyFilter.value) &&
+    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value) &&
+    (reportTypeFilter.value === 'All Types' || r.reportType === reportTypeFilter.value) &&
+    (reportFilter.value === 'All Reports' || r.report === reportFilter.value) &&
+    weekdayOf(r.sent_date)
+  );
+  const byDay = {};
+  rows.forEach(r => { const d = weekdayOf(r.sent_date); (byDay[d] = byDay[d] || []).push(r); });
+  return WEEK_ORDER.filter(d => byDay[d]).map(d => {
+    const g = byDay[d];
+    const sent = g.reduce((s,r)=>s+r.sent,0);
+    const opened = g.reduce((s,r)=>s+r.opened,0);
+    return { day: d, openRate: sent ? opened/sent*100 : 0, n: g.length };
+  });
+}
+
 // Typical email engagement decay (share landing on day 0, 1, 2, ... after send).
 // Used only to MODEL a daily split of a report's real opens/clicks totals.
 const ENGAGEMENT_DECAY = [0.45, 0.24, 0.13, 0.07, 0.05, 0.04, 0.02];
@@ -882,6 +918,14 @@ function updateCharts(rows) {
     options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}} }
   });
 
+  // Best day of week to send (open rate by send weekday).
+  const bd = bestDaySummary();
+  makeOrUpdateChart('bestDayChart', 'bestDayChart', {
+    type:'bar',
+    data: { labels:bd.map(d=>`${d.day} · ${d.n} send${d.n===1?'':'s'}`), datasets:[{ label:'Open rate %', data:bd.map(d=>Number(d.openRate.toFixed(1))), backgroundColor:bd.map(d=>openRateColor(d.openRate)), borderWidth:0, borderRadius:4 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`Open rate ${ctx.parsed.y}%`}}}, scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}} }
+  });
+
   // Engagement over time — only for a single report+month; modeled daily split.
   const engCard = document.getElementById('engagementCard');
   const oneRow = rows.length === 1 ? rows[0] : null;
@@ -948,7 +992,6 @@ reportTypeFilter.addEventListener('change', () => { updateReportFilter(); update
 reportFilter.addEventListener('change', updateDashboard);
 
 populateFilters();
-monthFilter.value = 'May 2026';
 updateReportFilter();
 updateDashboard();
 </script>
