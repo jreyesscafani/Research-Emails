@@ -86,17 +86,17 @@
 </div>
 
 <div class="chart-card">
-  <p class="section-label">Open rate by report<span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
+  <p class="section-label"><span id="openRateChartLabel">Open rate by report</span><span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
   <div style="position:relative;width:100%;height:380px;"><canvas id="openRateChart"></canvas></div>
 </div>
 
 <div class="two-col">
   <div class="chart-card">
-    <p class="section-label">Click rate by report<span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
+    <p class="section-label"><span id="clickRateChartLabel">Click rate by report</span><span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
     <div style="position:relative;width:100%;height:340px;"><canvas id="clickRateChart"></canvas></div>
   </div>
   <div class="chart-card">
-    <p class="section-label">Click-to-open rate by report <span style="font-weight:400;font-size:12px;">(of openers who clicked)</span><span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
+    <p class="section-label"><span id="ctorChartLabel">Click-to-open rate by report</span> <span style="font-weight:400;font-size:12px;">(of openers who clicked)</span><span class="agg-note" style="font-weight:400;font-size:12px;color:#888780;"></span></p>
     <div style="position:relative;width:100%;height:340px;"><canvas id="ctorChart"></canvas></div>
   </div>
 </div>
@@ -260,6 +260,36 @@ const data = [
     "clickRate": 5.2,
     "ctor": 25.1,
     "dlRate": 5.98
+  },
+  {
+    "month": "January 2026",
+    "report": "RCAF Market Fundamentals",
+    "sent_date": "Jan 29, 2026",
+    "sent": 7119,
+    "opened": 1513,
+    "clicked": 176,
+    "hardBounced": 18,
+    "dlClicks": 71,
+    "category": "Rental Communities & SFR",
+    "openRate": 21.3,
+    "clickRate": 2.5,
+    "ctor": 11.6,
+    "dlRate": 1.00
+  },
+  {
+    "month": "January 2026",
+    "report": "RCAF Quarterly",
+    "sent_date": "Jan 29, 2026",
+    "sent": 7119,
+    "opened": 1513,
+    "clicked": 176,
+    "hardBounced": 18,
+    "dlClicks": 154,
+    "category": "Rental Communities & SFR",
+    "openRate": 21.3,
+    "clickRate": 2.5,
+    "ctor": 11.6,
+    "dlRate": 2.16
   },
   {
     "month": "February 2026",
@@ -1337,39 +1367,67 @@ function rowLabel(r) {
   return monthFilter.value === 'All Months' ? r.report : `${r.report} (${r.month.replace(' 2026','')})`;
 }
 
+// Chronological order for a single report's per-month rows (trend view).
+function monthTrendRows(rows) {
+  return [...rows].sort((a,b) => new Date(a.month) - new Date(b.month));
+}
+
 function updateCharts(rows) {
-  // The open/click/CTOR-by-report charts always compare every report (they ignore
-  // the Report filter, which would otherwise leave them showing a single bar) —
-  // they still respect the Month/Frequency/Category/Report type filters.
-  const compareRows = data.filter(matchesBaseFilters);
-  const crows = chartRows(compareRows);
   const aggregating = monthFilter.value === 'All Months';
   const singleReport = reportFilter.value !== 'All Reports';
-  const aggNote = [
+  // With one report selected and no month filter, there's nothing to "compare
+  // across reports" — show that report's trend across its own months instead.
+  // Otherwise (All Reports, or a specific month picked) compare across reports,
+  // ignoring the Report filter so picking a report doesn't collapse this to one bar.
+  const trendView = singleReport && aggregating;
+
+  let sorted, labels, maxOpen;
+  if (trendView) {
+    sorted = monthTrendRows(rows);
+    labels = sorted.map(r => r.month.replace(' 2026',''));
+    maxOpen = Math.max(55, ...sorted.map(r=>r.openRate));
+  } else {
+    const compareRows = data.filter(matchesBaseFilters);
+    sorted = [...chartRows(compareRows)].sort((a,b)=>b.openRate-a.openRate);
+    labels = sorted.map(rowLabel);
+    maxOpen = Math.max(55, ...sorted.map(r=>r.openRate));
+  }
+
+  document.getElementById('openRateChartLabel').textContent = trendView ? 'Open rate by month' : 'Open rate by report';
+  document.getElementById('clickRateChartLabel').textContent = trendView ? 'Click rate by month' : 'Click rate by report';
+  document.getElementById('ctorChartLabel').textContent = trendView ? 'Click-to-open rate by month' : 'Click-to-open rate by report';
+
+  const aggNote = trendView ? '' : [
     aggregating ? 'avg across months' : '',
     singleReport ? 'showing all reports' : ''
   ].filter(Boolean).join(' · ');
   document.querySelectorAll('.agg-note').forEach(el => el.textContent = aggNote ? ' · ' + aggNote : '');
-  const sorted = [...crows].sort((a,b)=>b.openRate-a.openRate);
-  const labels = sorted.map(rowLabel);
-  const maxOpen = Math.max(55, ...sorted.map(r=>r.openRate));
+
+  // Trend view reads left-to-right by month (vertical bars); the report-comparison
+  // view uses horizontal bars so long report-name labels stay readable.
+  const openOptions = trendView
+    ? { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:maxOpen,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}} }
+    : { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,max:maxOpen,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} };
+  const rateOptions = trendView
+    ? { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}} }
+    : { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} };
 
   makeOrUpdateChart('openChart', 'openRateChart', {
     type:'bar',
     data: { labels, datasets:[{ label:'Open rate %', data:sorted.map(r=>r.openRate), backgroundColor:sorted.map(r=>openRateColor(r.openRate)), borderWidth:0, borderRadius:4 }] },
-    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,max:maxOpen,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
+    options: openOptions
   });
 
   makeOrUpdateChart('clickChart', 'clickRateChart', {
     type:'bar',
     data: { labels, datasets:[{ label:'Click rate %', data:sorted.map(r=>r.clickRate), backgroundColor:'#378ADD', borderWidth:0, borderRadius:4 }] },
-    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
+    options: rateOptions
   });
 
   makeOrUpdateChart('ctorChart', 'ctorChart', {
     type:'bar',
     data: { labels, datasets:[{ label:'CTOR %', data:sorted.map(r=>r.ctor), backgroundColor:'#7B5EA7', borderWidth:0, borderRadius:4 }] },
-    options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}, y:{ticks:{font:{size:11}}}} }
+    options: rateOptions
   });
 
   const cats = categorySummary(rows);
