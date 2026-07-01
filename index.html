@@ -83,7 +83,6 @@
 <div class="chart-card" id="detailCard">
   <p class="section-label" id="detailTitle">Selected view summary</p>
   <div class="detail-grid" id="detailGrid"></div>
-  <p class="dl-note">Open rate = opens ÷ sent. <strong>Click-to-open rate = clicks ÷ opens</strong> — of the people who actually opened the email, what share clicked through. <strong>PDF rate = clicks on the portal.jbrec.com report PDF link ÷ total sent</strong> (shown as "Report download rate" in the table below).</p>
 </div>
 
 <div class="chart-card">
@@ -826,13 +825,13 @@ function updateMetrics(rows) {
   document.getElementById('detailGrid').innerHTML = `
     ${oneRow ? `<div class="detail-item"><span>Sent date</span><strong style="font-size:16px">${fmtSentDate(oneRow.sent_date, {longDow:true})}</strong></div>` : ''}
     <div class="detail-item"><span>Total sent</span><strong>${fmtNum(s.sent)}</strong></div>
-    <div class="detail-item"><span>Open rate</span><strong>${fmtPct(s.openRate)}</strong></div>
+    <div class="detail-item"><span>Open rate (opens ÷ sent)</span><strong>${fmtPct(s.openRate)}</strong></div>
     ${singleReport ? `<div class="detail-item"><span>Click rate</span><strong>${fmtPct(s.clickRate)}</strong></div>` : ''}
-    <div class="detail-item"><span>Click-to-open rate</span><strong>${fmtPct(s.ctor)}</strong></div>
+    <div class="detail-item"><span>Click-to-open rate (clicks ÷ opens)</span><strong>${fmtPct(s.ctor)}</strong></div>
     <div class="detail-item"><span>Total opens</span><strong>${fmtNum(s.opened)}</strong></div>
     ${singleReport ? `<div class="detail-item"><span>Total clicks</span><strong>${fmtNum(s.clicked)}</strong></div>` : ''}
     <div class="detail-item"><span>PDF clicks</span><strong>${fmtNum(s.dlClicks)}</strong></div>
-    <div class="detail-item"><span>PDF rate</span><strong>${fmtPct(s.dlRate)}</strong></div>
+    <div class="detail-item"><span>PDF rate (PDF clicks ÷ total sent)</span><strong>${fmtPct(s.dlRate)}</strong></div>
   `;
 }
 
