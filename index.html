@@ -2132,6 +2132,9 @@ const reportTypeFilter = document.getElementById('reportTypeFilter');
 const reportFilter = document.getElementById('reportFilter');
 
 function unique(arr) { return [...new Set(arr)].sort(); }
+// Months are "Month Year" strings (e.g. "July 2025"); a plain .sort() puts them
+// in alphabetical order, not chronological. Parse and sort by actual date instead.
+function uniqueMonths(arr) { return [...new Set(arr)].sort((a, b) => new Date(a) - new Date(b)); }
 function fmtNum(n) { return Number(n).toLocaleString(); }
 function fmtPct(n) { return Number(n).toFixed(1).replace(/\.0$/, '') + '%'; }
 
@@ -2216,7 +2219,7 @@ function fillSelect(el, values, allLabel) {
 }
 
 function populateFilters() {
-  fillSelect(monthFilter, unique(data.map(r => r.month)), 'All Months');
+  fillSelect(monthFilter, uniqueMonths(data.map(r => r.month)), 'All Months');
   fillSelect(frequencyFilter, unique(data.map(r => r.frequency)), 'All Frequencies');
   fillSelect(categoryFilter, unique(data.map(r => r.category)), 'All Categories');
   fillSelect(reportTypeFilter, unique(data.map(r => r.reportType)), 'All Types');
