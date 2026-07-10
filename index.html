@@ -323,6 +323,21 @@ const data = [
     "dlRate": 1.71
   },
   {
+    "month": "September 2025",
+    "report": "Fear and Greed",
+    "sent_date": "Sep 12, 2025",
+    "sent": 12428,
+    "opened": 4778,
+    "clicked": 489,
+    "hardBounced": 26,
+    "dlClicks": 491,
+    "category": "Macro",
+    "openRate": 38.4,
+    "clickRate": 3.9,
+    "ctor": 10.2,
+    "dlRate": 3.95
+  },
+  {
     "month": "October 2025",
     "report": "Land Survey",
     "sent_date": "Oct 15, 2025",
@@ -486,6 +501,21 @@ const data = [
     "clickRate": 1.7,
     "ctor": 4.7,
     "dlRate": 1.39
+  },
+  {
+    "month": "December 2025",
+    "report": "Fear and Greed",
+    "sent_date": "Dec 11, 2025",
+    "sent": 12739,
+    "opened": 4793,
+    "clicked": 447,
+    "hardBounced": 24,
+    "dlClicks": 422,
+    "category": "Macro",
+    "openRate": 37.6,
+    "clickRate": 3.5,
+    "ctor": 9.3,
+    "dlRate": 3.31
   },
   {
     "month": "January 2026",
@@ -1103,6 +1133,21 @@ const data = [
     "dlRate": 1.02
   },
   {
+    "month": "March 2026",
+    "report": "CRE Capital Markets Survey",
+    "sent_date": "Mar 6, 2026",
+    "sent": 12738,
+    "opened": 4325,
+    "clicked": 396,
+    "hardBounced": 758,
+    "dlClicks": 375,
+    "category": "Macro",
+    "openRate": 34.0,
+    "clickRate": 3.1,
+    "ctor": 9.2,
+    "dlRate": 2.94
+  },
+  {
     "month": "April 2026",
     "report": "NHTI Insights",
     "sent_date": "Apr 27, 2026",
@@ -1701,6 +1746,21 @@ const data = [
     "clickRate": 4.3,
     "ctor": 9.1,
     "dlRate": 3.33
+  },
+  {
+    "month": "June 2026",
+    "report": "CRE Capital Markets Survey",
+    "sent_date": "Jun 8, 2026",
+    "sent": 12974,
+    "opened": 4494,
+    "clicked": 210,
+    "hardBounced": 117,
+    "dlClicks": 207,
+    "category": "Macro",
+    "openRate": 34.6,
+    "clickRate": 1.6,
+    "ctor": 4.7,
+    "dlRate": 1.60
   }
 ];
 
@@ -1731,7 +1791,8 @@ const REPORT_META = {
   "BTR Survey":               { name: "Build-to-Rent Developer, Operator, and Investor Survey", short: "BTR Survey", frequency: "Quarterly", category: "Rental Communities", reportType: "Survey" },
   "BP Quarterly":             { name: "Building Products Analysis and Forecast", short: "BP Quarterly", frequency: "Quarterly", category: "Building Products", reportType: "Analysis and Forecast" },
   // Any report named "Fear and Greed" is renamed to the CRE Capital Markets Survey.
-  "Fear and Greed":           { name: "CRE Capital Markets Survey (Commercial Real Estate)", short: "CRE Capital Markets Survey (Commercial Real Estate)", frequency: "Quarterly", category: "Macro", reportType: "Survey" }
+  "Fear and Greed":           { name: "CRE Capital Markets Survey (Commercial Real Estate)", short: "CRE Capital Markets Survey (Commercial Real Estate)", frequency: "Quarterly", category: "Macro", reportType: "Survey" },
+  "CRE Capital Markets Survey": { name: "CRE Capital Markets Survey (Commercial Real Estate)", short: "CRE Capital Markets Survey (Commercial Real Estate)", frequency: "Quarterly", category: "Macro", reportType: "Survey" }
 };
 
 data.forEach(r => {
