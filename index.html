@@ -136,13 +136,14 @@
         <th>Report download rate</th>
         <th>Opens</th>
         <th>Clicks</th>
-        <th>Hard bounces</th>
+        <th>Bounces</th>
       </tr>
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
   </div>
   <p class="dl-note">* “Report download rate” is the same as “PDF rate” above. “—” indicates data not available for that report/month.</p>
+  <p class="dl-note">“Bounces” is the total number of emails that didn’t get delivered (hard and soft bounces combined) — the two aren’t broken out separately in this dashboard.</p>
   <p class="dl-note">Open rate rating (of send, not industry benchmark): <span class="pill pill-green">Strong</span> ≥40% · <span class="pill pill-blue">Good</span> 35–39.9% · <span class="pill pill-amber">Average</span> 30–34.9% · <span class="pill pill-red">Low</span> &lt;30%.</p>
   <p class="dl-note" id="tableAggNote"></p>
 </div>
@@ -278,6 +279,21 @@ const data = [
   },
   {
     "month": "August 2025",
+    "report": "Apartment REITs",
+    "sent_date": "Aug 26, 2025",
+    "sent": 6646,
+    "opened": 2556,
+    "clicked": 88,
+    "hardBounced": 20,
+    "dlClicks": 81,
+    "category": "Rental Communities & SFR",
+    "openRate": 38.5,
+    "clickRate": 1.3,
+    "ctor": 3.4,
+    "dlRate": 1.22
+  },
+  {
+    "month": "August 2025",
     "report": "Window and Door",
     "sent_date": "Aug 13, 2025",
     "sent": 3021,
@@ -410,6 +426,21 @@ const data = [
     "clickRate": 4.2,
     "ctor": 10.9,
     "dlRate": 3.83
+  },
+  {
+    "month": "November 2025",
+    "report": "Apartment REITs",
+    "sent_date": "Nov 24, 2025",
+    "sent": 7167,
+    "opened": 2412,
+    "clicked": 128,
+    "hardBounced": 20,
+    "dlClicks": 92,
+    "category": "Rental Communities & SFR",
+    "openRate": 33.7,
+    "clickRate": 1.8,
+    "ctor": 5.3,
+    "dlRate": 1.28
   },
   {
     "month": "November 2025",
@@ -860,6 +891,21 @@ const data = [
     "clickRate": 3.9,
     "ctor": 11.4,
     "dlRate": 3.80
+  },
+  {
+    "month": "February 2026",
+    "report": "Apartment REITs",
+    "sent_date": "Feb 27, 2026",
+    "sent": 7218,
+    "opened": 2323,
+    "clicked": 79,
+    "hardBounced": 339,
+    "dlClicks": 73,
+    "category": "Rental Communities & SFR",
+    "openRate": 32.2,
+    "clickRate": 1.1,
+    "ctor": 3.4,
+    "dlRate": 1.01
   },
   {
     "month": "March 2026",
