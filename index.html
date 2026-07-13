@@ -10,8 +10,11 @@
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a18; padding: 2rem; }
   h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
   .subtitle { font-size: 14px; color: #5f5e5a; margin-bottom: 1.5rem; }
-  .controls { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:1.5rem; }
+  .controls { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; }
   .control-card { background:#fff; border:0.5px solid rgba(0,0,0,0.1); border-radius:10px; padding:12px; }
+  .control-groups { margin-bottom:1.5rem; }
+  .control-group { margin-bottom:14px; }
+  .control-group-label { font-size:12px; font-weight:600; color:#9a988f; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px; }
   label { display:block; font-size:12px; color:#5f5e5a; margin-bottom:6px; font-weight:500; }
   select { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #d3d1c7; background:#fff; font-size:14px; }
   .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 2rem; }
@@ -56,26 +59,36 @@
   The two methodologies are not perfectly apples-to-apples — treat cross-year comparisons directionally.
 </p>
 
-<div class="controls">
-  <div class="control-card">
-    <label for="monthFilter">Month</label>
-    <select id="monthFilter"></select>
+<div class="control-groups">
+  <div class="control-group">
+    <div class="control-group-label">When</div>
+    <div class="controls">
+      <div class="control-card">
+        <label for="monthFilter">Month</label>
+        <select id="monthFilter"></select>
+      </div>
+    </div>
   </div>
-  <div class="control-card">
-    <label for="frequencyFilter">Frequency</label>
-    <select id="frequencyFilter"></select>
-  </div>
-  <div class="control-card">
-    <label for="categoryFilter">Category</label>
-    <select id="categoryFilter"></select>
-  </div>
-  <div class="control-card">
-    <label for="reportTypeFilter">Report type</label>
-    <select id="reportTypeFilter"></select>
-  </div>
-  <div class="control-card">
-    <label for="reportFilter">Report</label>
-    <select id="reportFilter"></select>
+  <div class="control-group">
+    <div class="control-group-label">What</div>
+    <div class="controls">
+      <div class="control-card">
+        <label for="categoryFilter">Category</label>
+        <select id="categoryFilter"></select>
+      </div>
+      <div class="control-card">
+        <label for="reportTypeFilter">Report type</label>
+        <select id="reportTypeFilter"></select>
+      </div>
+      <div class="control-card">
+        <label for="reportFilter">Report</label>
+        <select id="reportFilter"></select>
+      </div>
+      <div class="control-card">
+        <label for="frequencyFilter">Frequency</label>
+        <select id="frequencyFilter"></select>
+      </div>
+    </div>
   </div>
 </div>
 
