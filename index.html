@@ -5269,15 +5269,22 @@ function monthTrendRows(rows) {
 function updateCharts(rows) {
   const aggregating = monthFilter.value === 'All Months';
   const singleReport = reportFilter.value !== 'All Reports';
-  // With one report selected and no month filter, there's nothing to "compare
-  // across reports" — show that report's trend across its own months instead.
-  // Otherwise (All Reports, or a specific month picked) compare across reports,
-  // ignoring the Report filter so picking a report doesn't collapse this to one bar.
-  const trendView = singleReport && aggregating;
+  // Once a specific report is selected, comparing it against every other report
+  // isn't useful — show that report's own trend across months instead. That's
+  // true whether or not a specific month is also picked elsewhere on the page,
+  // so this ignores the Month filter (like bestDaySummary does) rather than
+  // collapsing to the single selected month.
+  const trendView = singleReport;
 
   let sorted, labels, maxOpen;
   if (trendView) {
-    sorted = monthTrendRows(rows);
+    const reportRows = data.filter(r =>
+      (frequencyFilter.value === 'All Frequencies' || r.frequency === frequencyFilter.value) &&
+      (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value) &&
+      (reportTypeFilter.value === 'All Types' || r.reportType === reportTypeFilter.value) &&
+      r.report === reportFilter.value
+    );
+    sorted = monthTrendRows(reportRows);
     labels = sorted.map(r => r.month.replace(' 2026',''));
     maxOpen = Math.max(55, ...sorted.map(r=>r.openRate));
   } else {
