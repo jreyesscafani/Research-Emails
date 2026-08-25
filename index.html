@@ -125,6 +125,18 @@
   <div style="position:relative;width:100%;height:320px;"><canvas id="categoryChart"></canvas></div>
 </div>
 
+<div class="two-col" id="categoryTrendCard">
+  <div class="chart-card">
+    <p class="section-label">Open rate — month over month by category</p>
+    <div style="position:relative;width:100%;height:340px;"><canvas id="categoryOpenTrendChart"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <p class="section-label">Click rate — month over month by category</p>
+    <div style="position:relative;width:100%;height:340px;"><canvas id="categoryClickTrendChart"></canvas></div>
+  </div>
+  <p class="dl-note" style="grid-column:1 / -1;">Ignores the Month filter so the trend stays visible; the selected month (if any) is bolded on the axis.</p>
+</div>
+
 <div class="chart-card" id="bestDayCard">
   <p class="section-label">Best day of week to send <span style="font-weight:400;font-size:12px;">(open rate by weekday the email was sent · label shows # of sends)</span></p>
   <div style="position:relative;width:100%;height:300px;"><canvas id="bestDayChart"></canvas></div>
@@ -5184,6 +5196,40 @@ function categorySummary(rows) {
   }).sort((a,b)=>b.openRate-a.openRate);
 }
 
+const CATEGORY_COLORS = ['#1D9E75','#378ADD','#7B5EA7','#EF9F27','#E4572E','#2D9CDB','#C33C54','#5DCAA5'];
+function categoryColor(i) { return CATEGORY_COLORS[i % CATEGORY_COLORS.length]; }
+
+// Open/click rate per category, per month — ignores the Month filter (like
+// bestDaySummary) so the trend stays visible across every month, not just the
+// one currently selected. Respects every other filter, including Report: if a
+// single report is picked this collapses to that report's one category anyway,
+// but that case is hidden from view since the report already gets its own
+// month-by-month chart above.
+function categoryMonthlyTrend() {
+  const rows = data.filter(r =>
+    (frequencyFilter.value === 'All Frequencies' || r.frequency === frequencyFilter.value) &&
+    (categoryFilter.value === 'All Categories' || r.category === categoryFilter.value) &&
+    (reportTypeFilter.value === 'All Types' || r.reportType === reportTypeFilter.value) &&
+    (reportFilter.value === 'All Reports' || r.report === reportFilter.value)
+  );
+  const months = uniqueMonths(rows.map(r => r.month));
+  const categories = unique(rows.map(r => r.category));
+  const series = categories.map(cat => {
+    const openRates = [], clickRates = [];
+    months.forEach(m => {
+      const group = rows.filter(r => r.category === cat && r.month === m);
+      if (!group.length) { openRates.push(null); clickRates.push(null); return; }
+      const sent = group.reduce((s,r)=>s+r.sent,0);
+      const opened = group.reduce((s,r)=>s+r.opened,0);
+      const clicked = group.reduce((s,r)=>s+r.clicked,0);
+      openRates.push(sent ? opened/sent*100 : null);
+      clickRates.push(sent ? clicked/sent*100 : null);
+    });
+    return { category: cat, openRates, clickRates };
+  });
+  return { months, series };
+}
+
 function updateMetrics(rows) {
   const s = summary(rows);
   // Click rate (and the raw click count) are only shown when a single report is
@@ -5344,6 +5390,49 @@ function updateCharts(rows) {
       type:'bar',
       data: { labels:cats.map(c=>c.category), datasets:[{ label:'Open rate', data:cats.map(c=>Number(c.openRate.toFixed(1))), backgroundColor:'#5DCAA5', borderWidth:0, borderRadius:4 }, { label:'Click rate', data:cats.map(c=>Number(c.clickRate.toFixed(1))), backgroundColor:'#378ADD', borderWidth:0, borderRadius:4 }] },
       options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}} }
+    });
+  }
+
+  // Same reasoning as the category-summary chart above: with one report
+  // selected there's only one category's trend to show, and it's already
+  // covered by the "by month" charts at the top of the page.
+  const categoryTrendCard = document.getElementById('categoryTrendCard');
+  if (singleReport) {
+    categoryTrendCard.style.display = 'none';
+    ['categoryOpenTrendChart','categoryClickTrendChart'].forEach(name => {
+      if (charts[name]) { charts[name].destroy(); delete charts[name]; }
+    });
+  } else {
+    categoryTrendCard.style.display = '';
+    const trend = categoryMonthlyTrend();
+    const trendLabels = trend.months.map(m => m.replace(' 2026',''));
+    const selectedMonth = monthFilter.value;
+    const trendLineOptions = {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } } },
+      scales:{
+        y:{ beginAtZero:true, ticks:{ callback:v=>v+'%' }, grid:{ color:'rgba(0,0,0,0.06)' } },
+        x:{ ticks:{
+          color: ctx => trend.months[ctx.index] === selectedMonth ? '#1a1a18' : '#5f5e5a',
+          font: ctx => trend.months[ctx.index] === selectedMonth ? { weight:'bold' } : {}
+        } }
+      }
+    };
+    makeOrUpdateChart('categoryOpenTrendChart', 'categoryOpenTrendChart', {
+      type:'line',
+      data:{ labels: trendLabels, datasets: trend.series.map((s,i) => ({
+        label: s.category, data: s.openRates, borderColor: categoryColor(i), backgroundColor: categoryColor(i),
+        spanGaps:true, tension:0.3, borderWidth:2, pointRadius:3
+      })) },
+      options: trendLineOptions
+    });
+    makeOrUpdateChart('categoryClickTrendChart', 'categoryClickTrendChart', {
+      type:'line',
+      data:{ labels: trendLabels, datasets: trend.series.map((s,i) => ({
+        label: s.category, data: s.clickRates, borderColor: categoryColor(i), backgroundColor: categoryColor(i),
+        spanGaps:true, tension:0.3, borderWidth:2, pointRadius:3
+      })) },
+      options: trendLineOptions
     });
   }
 
